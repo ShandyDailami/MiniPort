@@ -28,7 +28,12 @@
             <div class="w-6 h-6 border-4 border-slate-300 border-t-[#D72F19] rounded-full animate-spin"></div>
         </div>
     </div>
-@endif
+    @endif
+    <div class="fixed w-1/2 mb-5 top-0">
+        @error('error')
+            <x-alert-error :message="$message" />
+        @enderror
+    </div>
     <div class="w-1/2 h-full flex flex-col justify-center items-center bg-[#F9C25B]">
             <form action="" method="POST" class="w-full px-30">
                 @csrf

@@ -18,7 +18,6 @@
                 Ini adalah contoh pop-up. Saat ini muncul, Anda tidak bisa mengklik form login atau elemen apa pun di belakangnya.
             </p>
 
-            <!-- Tombol Tutup -->
             <button @click="isModalOpen = false" class="border-2 border-black px-8 py-2 rounded-md bg-[#F9C25B] text-black font-bold shadow-[4px_4px_black] hover:-translate-y-1 hover:shadow-[6px_6px_black] transition-all">
                 Mengerti
             </button>
