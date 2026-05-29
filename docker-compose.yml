@@ -1,0 +1,52 @@
+services:
+  # Container Utama Laravel
+  laravel.test:
+    image: serversideup/php:8.4-fpm-nginx
+    ports:
+      - '8080:8080'
+    volumes:
+      - '.:/var/www/html'
+    environment:
+      - APP_ENV=local
+      - DB_HOST=miniport-db
+      - PHP_OPCACHE_ENABLE=0
+    networks:
+      - miniport-network
+    depends_on:
+      - miniport-db
+  # Container Database MySQL
+  miniport-db:
+    image: mysql:8.0
+    ports:
+      - '3306:3306'
+    environment:
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=miniport
+    volumes:
+      - 'miniport-mysql:/var/lib/mysql'
+    networks:
+      - miniport-network
+
+  # Container MiniStack / LocalStack (AWS Emulator)
+  ministack:
+    image: localstack/localstack
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=s3,sqs,sns
+    volumes:
+      - "miniport-localstack:/var/lib/localstack"
+    networks:
+      - miniport-network
+
+networks:
+  miniport-network:
+    driver: bridge
+
+volumes:
+  miniport-mysql:
+    driver: local
+  miniport-localstack:
+    driver: local
+
