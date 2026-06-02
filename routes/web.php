@@ -1,15 +1,27 @@
 <?php
 
-use App\Http\Controllers\LoginController;
-use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BucketController;
+use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [UserController::class, 'view'])->middleware('auth');
+// Route::get('/', [UserController::class, 'view'])->middleware('auth');
+Route::get('/', [UserController::class, 'dashboardView'])->middleware('auth');
 
-Route::get('/login', [LoginController::class, 'view'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/logout', [UserController::class, 'logout']);
+Route::get('/buckets', [BucketController::class, 'index'])->middleware('auth');
+Route::get('/bucket/create', [BucketController::class, 'create'])->middleware('auth');
+Route::post('/bucket/create', [BucketController::class, 'store'])->middleware('auth');
 
-Route::get('/register', [RegisterController::class, 'view'])->name('register');
-Route::post('/register', [RegisterController::class, 'regist']);
+Route::middleware('auth')->group(function () {
+    Route::get('/credentials', [CredentialController::class, 'index']);
+    Route::post('/credentials', [CredentialController::class, 'store']);
+    Route::patch('/credentials/{id}/revoke', [CredentialController::class, 'revoke']);
+});
+
+Route::get('/login', [AuthController::class, 'loginView'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout']);
+
+Route::get('/register', [AuthController::class, 'registView'])->name('register');
+Route::post('/register', [AuthController::class, 'regist']);

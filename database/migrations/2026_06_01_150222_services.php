@@ -10,13 +10,13 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('logs', function (Blueprint $table) {
+        Schema::create('services', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
-            $table->string('action');
-            $table->string('ip_address')->nullable();
-            $table->text('details');
-            $table->timestamp('created_at');
+            $table->string('service_name');
+            $table->text('description');
+            $table->boolean('is_active');
+            $table->foreignId('admin_id')->constrained();
+            $table->timestamps();
         });
     }
 
@@ -25,6 +25,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('logs');
+        Schema::dropIfExists('services');
     }
 };
