@@ -86,7 +86,7 @@
                     <div class="text-7xl mb-6">🏜️</div>
                     <h2 class="text-3xl font-black uppercase mb-4">Ruang Penyimpanan Masih Kosong!</h2>
                     <p class="font-bold text-xl text-slate-800 mb-8">Anda belum menciptakan satu pun bucket di server MiniStack.</p>
-                    <a href="/buckets/create" class="inline-block border-4 border-black bg-white px-6 py-4 font-black uppercase text-xl shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all">
+                    <a href="/bucket/create" class="inline-block border-4 border-black bg-white px-6 py-4 font-black uppercase text-xl shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all">
                         🚀 Ciptakan Bucket Pertamamu
                     </a>
                 </div>

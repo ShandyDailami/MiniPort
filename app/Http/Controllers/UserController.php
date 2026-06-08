@@ -43,7 +43,7 @@ class UserController extends Controller
             $s3Client = new S3Client([
                 'version' => 'latest',
                 'region' => 'ap-southeast-1',
-                'endpoint' => 'http://localhost:4566',
+                'endpoint' => env('MINISTACK_ENDPOINT', 'http://ministack:4566'),
                 'use_path_style_endpoint' => true,
                 'credentials' => [
                     'key' => $activeCredential->access_key,

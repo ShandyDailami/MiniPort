@@ -42,7 +42,7 @@ class BucketController extends Controller
         $s3Client = new S3Client([
             'version' => 'latest',
             'region' => $region,
-            'endpoint' => 'http://localhost:4566',
+            'endpoint' => env('MINISTACK_ENDPOINT', 'http://ministack:4566'),
             'use_path_style_endpoint' => true,
             'credentials' => [
                 'key' => $userCredential->access_key,
@@ -66,10 +66,11 @@ class BucketController extends Controller
                 'user_id' => $user->id,
                 'action' => "CREATE_BUCKET",
                 'ip_address' => $request->ip(),
-                'detail' => "Berhasil membuat bucket s3: {$bucketName} di region {$region}",
+                'details' => "Berhasil membuat bucket s3: {$bucketName} di region {$region}",
             ]);
 
             DB::commit();
+            return redirect('/buckets')->with('success', "Bucket {$bucketName} berhasil dibuat.");
         } catch (AwsException $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menghubungi server MiniStack: ' . $e->getMessage());
@@ -77,5 +78,13 @@ class BucketController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
         }
+    }
+    public function show(Bucket $bucket)
+    {
+        if ($bucket->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak punya akses ke bucket ini.');
+        }
+
+        return view('frontend.bucket.show', compact('bucket'));
     }
 }

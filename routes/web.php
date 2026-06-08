@@ -12,6 +12,8 @@ Route::get('/', [UserController::class, 'dashboardView'])->middleware('auth');
 Route::get('/buckets', [BucketController::class, 'index'])->middleware('auth');
 Route::get('/bucket/create', [BucketController::class, 'create'])->middleware('auth');
 Route::post('/bucket/create', [BucketController::class, 'store'])->middleware('auth');
+Route::get('/bucket/{bucket}', [BucketController::class, 'show'])->middleware('auth');
+Route::delete('/bucket/{bucket}', [BucketController::class, 'destroy'])->middleware('auth');
 
 Route::middleware('auth')->group(function () {
     Route::get('/credentials', [CredentialController::class, 'index']);
