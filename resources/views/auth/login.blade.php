@@ -4,7 +4,7 @@
 
 @section('content')
 
-<div class="flex h-screen w-full items-center justify-center">
+<div class="md:flex-row flex h-screen w-full items-center justify-center sm:flex-col">
     @if (session('success'))
     <div x-data="{ show: true }"
         x-show="show"
@@ -29,13 +29,13 @@
         </div>
     </div>
     @endif
-    <div class="fixed w-1/2 mb-5 top-0">
+    <div class="fixed md:w-1/2 sm:w-0 mb-5 top-0">
         @error('error')
             <x-alert-error :message="$message" />
         @enderror
     </div>
-    <div class="w-1/2 h-full flex flex-col justify-center items-center bg-[#F9C25B]">
-            <form action="" method="POST" class="w-full px-30">
+    <div class="md:w-1/2 sm:w-full h-full flex flex-col justify-center items-center bg-[#F9C25B]">
+            <form action="" method="POST" class="w-full px-5 md:px-30">
                 @csrf
                 <h1 class="text-5xl font-bold mb-2">Log in to your account</h1>
                 <p class="text-slate-600 font-medium mb-5">Good to see you back! Come on, log in to your account.</p>
@@ -85,7 +85,7 @@
                 <p class="font-medium text-slate-600">Don't have an account? <a href="/register" class="text-slate-700">Sign up here</a> </p>
             </form>
         </div>
-        <div class="w-1/2 h-full bg-[url('/public/img/auth-icon.jpg')] bg-cover bg-center"></div>
+        <div class="md:block md:w-1/2 h-full bg-[url('/public/img/auth-icon.jpg')] bg-cover bg-center sm:hidden sm:w-0"></div>
     </div>
 
 @endsection

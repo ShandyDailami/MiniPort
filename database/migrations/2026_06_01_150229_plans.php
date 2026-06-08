@@ -10,13 +10,13 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('logs', function (Blueprint $table) {
+        Schema::create('plans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
-            $table->string('action');
-            $table->string('ip_address')->nullable();
-            $table->text('details');
-            $table->timestamp('created_at');
+            $table->foreignId('service_id')->constrained();
+            $table->string('plan_name');
+            $table->decimal('price', 8, 2);
+            $table->integer('storage_limit_mb');
+            $table->timestamps();
         });
     }
 
@@ -25,6 +25,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('logs');
+        Schema::dropIfExists('plans');
     }
 };

@@ -10,13 +10,13 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('logs', function (Blueprint $table) {
+        Schema::create('pin_verifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
-            $table->string('action');
-            $table->string('ip_address')->nullable();
-            $table->text('details');
-            $table->timestamp('created_at');
+            $table->string('pin_code');
+            $table->boolean('is_used');
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('created_at')->useCurrent();
         });
     }
 
@@ -25,6 +25,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('logs');
+        Schema::dropIfExists('pin_verifications');
     }
 };

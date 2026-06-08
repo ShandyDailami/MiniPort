@@ -4,7 +4,7 @@
 
 @section('content')
 
-    <div class="flex h-screen w-full items-center justify-center">
+    <div class="md:flex-row flex md:h-screen sm:h-full w-full items-center justify-center sm:flex-col">
         @if (session('success'))
     <div x-data="{ show: true }"
         x-show="show"
@@ -29,8 +29,8 @@
         </div>
     </div>
 @endif
-        <div class="w-1/2 h-full flex flex-col justify-center items-center bg-[#F9C25B]">
-            <form action="" method="POST" class="w-full px-30">
+        <div class="md:w-1/2 sm:w-full h-full flex flex-col justify-center items-center bg-[#F9C25B]">
+            <form action="" method="POST" class="w-full px-5 py-5 md:px-30 md:py-0">
                 @csrf
                 <h1 class="text-5xl font-bold mb-2">Create your account</h1>
                 <p class="text-slate-600 font-medium mb-5">Let's get up set up with a new account in just a few steps</p>
@@ -90,7 +90,7 @@
                 <p class="font-medium text-slate-600">Already have an account? <a href="/login" class="text-slate-800">Sign in here</a> </p>
             </form>
         </div>
-        <div class="w-1/2 h-full bg-[url('/public/img/auth-icon.jpg')] bg-cover bg-center"></div>
+        <div class="md:block md:w-1/2 h-full bg-[url('/public/img/auth-icon.jpg')] bg-cover bg-center sm:hidden sm:w-0"></div>
     </div>
 
 @endsection
