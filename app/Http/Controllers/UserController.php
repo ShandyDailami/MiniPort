@@ -24,82 +24,105 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Ambil Kredensial Aktif
         $activeCredential = Credential::where('user_id', $user->id)
             ->where('status', 'active')
             ->first();
 
-        // 2. Ambil 5 Log Aktivitas Terakhir
         $logs = Log::where('user_id', $user->id)
             ->latest()
             ->take(5)
             ->get();
 
-        // 3. LOGIKA DATA ASLI: Menghitung total penyimpanan S3 di MiniStack
-        $usedStorageGB = 0;
+        $buckets = Bucket::where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        $latestBuckets = $buckets->take(3);
+
+        $totalBuckets = $buckets->count();
+        $totalObjects = 0;
+        $usedStorageBytes = 0;
 
         if ($activeCredential) {
-            // Inisialisasi S3Client
-            $s3Client = new S3Client([
-                'version' => 'latest',
-                'region' => 'ap-southeast-1',
-                'endpoint' => env('MINISTACK_ENDPOINT', 'http://ministack:4566'),
-                'use_path_style_endpoint' => true,
-                'credentials' => [
-                    'key' => $activeCredential->access_key,
-                    'secret' => $activeCredential->secret_key,
-                ],
-            ]);
-
-            // Ambil daftar bucket milik user ini
-            $buckets = Bucket::where('user_id', $user->id)->get();
-            $totalBytes = 0;
-
-            // Looping ke setiap bucket untuk menghitung ukuran file (objek) di dalamnya
             foreach ($buckets as $bucket) {
                 try {
-                    $objects = $s3Client->listObjectsV2([
-                        'Bucket' => $bucket->bucket_name
+                    $s3Client = new S3Client([
+                        'version' => 'latest',
+                        'region' => $bucket->region,
+                        'endpoint' => env('MINISTACK_ENDPOINT', 'http://ministack:4566'),
+                        'use_path_style_endpoint' => true,
+                        'credentials' => [
+                            'key' => $activeCredential->access_key,
+                            'secret' => $activeCredential->secret_key,
+                        ],
                     ]);
 
-                    if (isset($objects['Contents'])) {
-                        foreach ($objects['Contents'] as $object) {
-                            $totalBytes += $object['Size']; // Size dalam format byte
+                    $params = [
+                        'Bucket' => $bucket->bucket_name,
+                    ];
+
+                    do {
+                        $result = $s3Client->listObjectsV2($params);
+
+                        foreach ($result['Contents'] ?? [] as $object) {
+                            $totalObjects++;
+                            $usedStorageBytes += $object['Size'];
                         }
-                    }
-                } catch (\Exception $e) {
-                    // Abaikan jika error (misal bucket kosong atau belum siap)
+
+                        $params['ContinuationToken'] = $result['NextContinuationToken'] ?? null;
+                    } while (!empty($result['IsTruncated']));
+
+                } catch (\Throwable $e) {
+                    // Bucket yang error dilewati agar dashboard tetap bisa dibuka.
+                    continue;
                 }
             }
-
-            // Konversi dari Bytes ke Gigabytes
-            $usedStorageGB = $totalBytes / 1073741824;
         }
 
-        // 4. DATA ASLI KOTA & PAKET (Dari tabel database)
-        // Kita ambil dari tabel users. Jika belum Anda buat kolomnya, ia akan menggunakan nilai bawaan (fallback).
-        $planName = $user->plan_name ?? 'Basic';
-        $totalStorageGB = $user->storage_limit_gb ?? 50;
+        $storageLimitBytes = (int) env('MINIPORT_DEFAULT_STORAGE_LIMIT_MB', 50) * 1024 * 1024;
+        $remainingStorageBytes = max(0, $storageLimitBytes - $usedStorageBytes);
 
-        // 5. Kalkulasi Persentase UI
         $usagePercentage = 0;
-        if ($totalStorageGB > 0) {
-            $usagePercentage = ($usedStorageGB / $totalStorageGB) * 100;
+        if ($storageLimitBytes > 0) {
+            $usagePercentage = min(100, ($usedStorageBytes / $storageLimitBytes) * 100);
         }
 
-        // Batasi persentase maksimal 100% agar bar UI tidak melebihi kotak
-        if ($usagePercentage > 100)
-            $usagePercentage = 100;
+        $planName = $user->plan_name ?? 'Basic';
 
-        // 6. Kirim semua data ke View
         return view('frontend.dashboard', [
             'name' => $user->name,
             'activeCredential' => $activeCredential,
             'logs' => $logs,
+            'buckets' => $buckets,
+            'latestBuckets' => $latestBuckets,
             'planName' => $planName,
-            'totalStorageGB' => $totalStorageGB,
-            'usedStorageGB' => $usedStorageGB,
-            'usagePercentage' => $usagePercentage
+
+            'totalBuckets' => $totalBuckets,
+            'totalObjects' => $totalObjects,
+            'usedStorageBytes' => $usedStorageBytes,
+            'storageLimitBytes' => $storageLimitBytes,
+            'remainingStorageBytes' => $remainingStorageBytes,
+            'usagePercentage' => $usagePercentage,
+
+            'usedStorageText' => $this->formatBytes($usedStorageBytes),
+            'storageLimitText' => $this->formatBytes($storageLimitBytes),
+            'remainingStorageText' => $this->formatBytes($remainingStorageBytes),
         ]);
+    }
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes >= 1073741824) {
+            return round($bytes / 1073741824, 2) . ' GB';
+        }
+
+        if ($bytes >= 1048576) {
+            return round($bytes / 1048576, 2) . ' MB';
+        }
+
+        if ($bytes >= 1024) {
+            return round($bytes / 1024, 2) . ' KB';
+        }
+
+        return $bytes . ' bytes';
     }
 }

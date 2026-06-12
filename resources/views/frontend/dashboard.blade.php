@@ -31,14 +31,14 @@
             <h2 class="mb-6 text-xl font-black uppercase text-slate-900 tracking-widest border-b-4 border-black pb-2">Navigasi</h2>
             <nav class="flex flex-col gap-4">
                 {{-- Menu Aktif: Kuning Terang (Yellow 400) --}}
-                <a href="#" class="border-4 border-black bg-[#FDE047] px-4 py-3 font-black uppercase shadow-[4px_4px_black] flex items-center justify-between hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all">
+                <a href="/" class="border-4 border-black bg-[#FDE047] px-4 py-3 font-black uppercase shadow-[4px_4px_black] flex items-center justify-between hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all">
                     <span>Overview</span>
                     <span class="text-xl leading-none">></span>
                 </a>
-                <a href="#" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
+                <a href="/buckets" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
                     Buckets
                 </a>
-                <a href="#" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
+                <a href="/credentials" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
                     API Keys
                 </a>
                 <a href="#" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
@@ -55,9 +55,20 @@
 
             {{-- WIDGET PENGGUNAAN KUOTA --}}
             <section class="border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-sm">
-                <h2 class="mb-4 text-2xl font-black uppercase">💾 Penggunaan Kuota (Paket {{ $planName ?? 'Free' }})</h2>
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-2xl font-black uppercase">💾 Global Storage Usage</h2>
+                        <p class="font-bold text-slate-700">
+                            Paket {{ $planName ?? 'Basic' }} - Object Storage MiniPort
+                        </p>
+                    </div>
+
+                    <div class="border-4 border-black bg-[#FDE047] px-4 py-2 font-black shadow-[4px_4px_black] w-fit">
+                        {{ round($usagePercentage ?? 0, 2) }}%
+                    </div>
+                </div>
+
                 <div class="h-10 w-full border-4 border-black bg-slate-100 rounded-sm overflow-hidden flex shadow-[inset_0px_4px_0px_rgba(0,0,0,0.1)] relative">
-                    {{-- Bar Kuota: Hijau Neon (Emerald 400) jika aman, Merah jika penuh --}}
                     <div
                         class="h-full border-r-4 border-black flex items-center justify-end px-2 transition-all duration-500 {{ ($usagePercentage ?? 0) > 80 ? 'bg-[#FF4545]' : 'bg-[#34D399]' }}"
                         style="width: {{ $usagePercentage ?? 0 }}%;"
@@ -67,9 +78,48 @@
                         </span>
                     </div>
                 </div>
-                <p class="mt-4 font-bold text-slate-800 bg-[#E2E8F0] border-2 border-black inline-block px-3 py-1 shadow-[2px_2px_black]">
-                    {{ $usedStorageGB ?? 0 }} GB terpakai dari total {{ $totalStorageGB ?? 0 }} GB
-                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div class="border-4 border-black bg-[#E9D5FF] p-4 shadow-[4px_4px_black]">
+                        <p class="font-black uppercase text-sm">Terpakai</p>
+                        <p class="text-2xl font-black">{{ $usedStorageText ?? '0 bytes' }}</p>
+                    </div>
+
+                    <div class="border-4 border-black bg-[#67E8F9] p-4 shadow-[4px_4px_black]">
+                        <p class="font-black uppercase text-sm">Sisa</p>
+                        <p class="text-2xl font-black">{{ $remainingStorageText ?? '0 bytes' }}</p>
+                    </div>
+
+                    <div class="border-4 border-black bg-[#FECDD3] p-4 shadow-[4px_4px_black]">
+                        <p class="font-black uppercase text-sm">Limit</p>
+                        <p class="text-2xl font-black">{{ $storageLimitText ?? '50 MB' }}</p>
+                    </div>
+                </div>
+            </section>
+
+            {{-- GLOBAL METRICS --}}
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="border-4 border-black bg-[#FDE047] p-6 shadow-[8px_8px_black]">
+                    <p class="font-black uppercase text-sm mb-2">Total Bucket</p>
+                    <div class="text-5xl font-black">{{ $totalBuckets ?? 0 }}</div>
+                    <p class="font-bold mt-3">Bucket aktif milik akun ini.</p>
+                </div>
+
+                <div class="border-4 border-black bg-[#34D399] p-6 shadow-[8px_8px_black]">
+                    <p class="font-black uppercase text-sm mb-2">Total Object</p>
+                    <div class="text-5xl font-black">{{ $totalObjects ?? 0 }}</div>
+                    <p class="font-bold mt-3">File/object tersimpan di seluruh bucket.</p>
+                </div>
+
+                <div class="border-4 border-black bg-[#C4B5FD] p-6 shadow-[8px_8px_black]">
+                    <p class="font-black uppercase text-sm mb-2">Credential Status</p>
+                    <div class="text-3xl font-black">
+                        {{ $activeCredential ? 'Aktif' : 'Tidak Ada' }}
+                    </div>
+                    <p class="font-bold mt-3">
+                        {{ $activeCredential ? 'API key siap digunakan.' : 'Generate API key untuk memakai layanan.' }}
+                    </p>
+                </div>
             </section>
 
             {{-- GRID TINDAKAN CEPAT & KREDENSIAL --}}
@@ -79,12 +129,13 @@
                 <section class="border-4 border-black bg-[#67E8F9] p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-sm">
                     <h2 class="mb-6 text-xl font-black uppercase">⚡ Tindakan Cepat</h2>
                     <div class="flex flex-col gap-4">
-                        <button id="newBucket" class="border-4 border-black bg-white text-black px-6 py-4 font-black uppercase text-lg shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all cursor-pointer">
+                        <a href="/bucket/create" class="border-4 border-black bg-white text-black px-6 py-4 font-black uppercase text-lg shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all cursor-pointer text-center">
                             + Buat Bucket Baru
-                        </button>
-                        <button id="newCredential" class="border-4 border-black bg-black text-white px-6 py-4 font-black uppercase text-lg shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all cursor-pointer">
+                        </a>
+
+                        <a href="/credentials" class="border-4 border-black bg-black text-white px-6 py-4 font-black uppercase text-lg shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all cursor-pointer text-center">
                             🔑 Generate API Key
-                        </button>
+                        </a>
                     </div>
                 </section>
 
@@ -106,29 +157,46 @@
                         </div>
                     @endif
                     </div>
-                    <button class="border-4 border-black bg-[#FDE047] text-black px-4 py-3 font-black uppercase shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all cursor-pointer w-full text-center">
+                    <a href="/credentials" class="border-4 border-black bg-[#FDE047] text-black px-4 py-3 font-black uppercase shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all cursor-pointer w-full text-center block">
                         Lihat Semua Kunci ->
-                    </button>
+                    </a>
                 </section>
 
             </div>
 
             {{-- BUCKET TERBARU --}}
             <section class="border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-sm">
-                <h2 class="mb-6 text-2xl font-black uppercase">🪣 Bucket Terbaru</h2>
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <h2 class="text-2xl font-black uppercase">🪣 Bucket Terbaru</h2>
+
+                    <a href="/buckets" class="border-4 border-black bg-[#FDE047] px-4 py-2 font-black uppercase shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all w-fit">
+                        Lihat Semua
+                    </a>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {{-- Kartu Bucket 1: Kuning --}}
-                    <div class="border-4 border-black bg-[#FDE047] p-4 shadow-[4px_4px_black] hover:-translate-y-2 hover:shadow-[8px_8px_black] transition-all cursor-pointer">
-                        <div class="text-4xl mb-2">📁</div>
-                        <h3 class="font-black text-lg truncate">aset-gambar</h3>
-                        <p class="font-bold text-slate-800 text-sm mt-1 border-t-4 border-black pt-2">Region: us-east-1</p>
-                    </div>
-                    {{-- Kartu Bucket 2: Putih --}}
-                    <div class="border-4 border-black bg-white p-4 shadow-[4px_4px_black] hover:-translate-y-2 hover:shadow-[8px_8px_black] transition-all cursor-pointer">
-                        <div class="text-4xl mb-2">📁</div>
-                        <h3 class="font-black text-lg truncate">bucket-db</h3>
-                        <p class="font-bold text-slate-800 text-sm mt-1 border-t-4 border-black pt-2">Region: ap-south-1</p>
-                    </div>
+                    @forelse($latestBuckets as $bucket)
+                        <a href="/bucket/{{ $bucket->id }}"
+                        class="border-4 border-black bg-[#FDE047] p-4 shadow-[4px_4px_black] hover:-translate-y-2 hover:shadow-[8px_8px_black] transition-all cursor-pointer block">
+                            <div class="text-4xl mb-2">📁</div>
+                            <h3 class="font-black text-lg truncate">{{ $bucket->bucket_name }}</h3>
+                            <p class="font-bold text-slate-800 text-sm mt-1 border-t-4 border-black pt-2">
+                                Region: {{ $bucket->region }}
+                            </p>
+                            <p class="font-bold text-slate-700 text-xs mt-2">
+                                Dibuat: {{ $bucket->created_at->format('d M Y, H:i') }}
+                            </p>
+                        </a>
+                    @empty
+                        <div class="col-span-full border-4 border-black bg-[#E9D5FF] p-8 text-center shadow-[4px_4px_black]">
+                            <p class="text-2xl font-black uppercase">Belum ada bucket.</p>
+                            <p class="font-bold mt-2">Buat bucket pertama untuk mulai memakai Object Storage.</p>
+
+                            <a href="/bucket/create" class="inline-block mt-5 border-4 border-black bg-white px-5 py-3 font-black uppercase shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all">
+                                + Buat Bucket
+                            </a>
+                        </div>
+                    @endforelse
                 </div>
             </section>
 

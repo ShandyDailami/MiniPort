@@ -70,11 +70,13 @@
                             🔍 Buka
                         </a>
 
-                        {{-- Tombol Hapus --}}
-                        <form action="/bucket/{{ $bucket->id }}" method="POST" class="flex-1 m-0" onsubmit="return confirm('Peringatan Brutal: Anda yakin ingin menghapus bucket ini beserta SELURUH isinya? Tindakan ini tidak bisa dibatalkan!');">
+                        <form action="/bucket/{{ $bucket->id }}" method="POST" class="flex-1 m-0"
+                            onsubmit="return confirm('Yakin ingin menghapus bucket ini beserta seluruh file di dalamnya? Tindakan ini tidak bisa dibatalkan!');">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="w-full h-full p-4 text-center font-black uppercase bg-white text-[#D72F19] hover:bg-[#D72F19] hover:text-white transition-colors cursor-pointer">
+
+                            <button type="submit"
+                                    class="w-full h-full p-4 text-center font-black uppercase bg-white text-[#D72F19] hover:bg-[#D72F19] hover:text-white transition-colors cursor-pointer">
                                 🗑️ Hapus
                             </button>
                         </form>

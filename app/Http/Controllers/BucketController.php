@@ -409,6 +409,87 @@ class BucketController extends Controller
                 ->with('error', 'Terjadi kesalahan sistem saat membuat share link: ' . $e->getMessage());
         }
     }
+    public function destroy(Request $request, Bucket $bucket)
+    {
+        if ($bucket->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak punya akses ke bucket ini.');
+        }
+
+        $credential = Credential::where('user_id', Auth::id())
+            ->where('status', 'active')
+            ->first();
+
+        if (!$credential) {
+            return redirect('/credentials')
+                ->with('error', 'Anda belum memiliki API Key aktif.');
+        }
+
+        $bucketName = $bucket->bucket_name;
+
+        try {
+            $s3Client = $this->s3Client($bucket->region, $credential);
+
+            // Pastikan bucket ada di MiniStack/S3
+            $s3Client->headBucket([
+                'Bucket' => $bucketName,
+            ]);
+
+            // Hapus semua object di dalam bucket.
+            // Ini penting karena S3 tidak bisa delete bucket kalau masih ada isi.
+            $params = [
+                'Bucket' => $bucketName,
+            ];
+
+            do {
+                $result = $s3Client->listObjectsV2($params);
+
+                $objects = collect($result['Contents'] ?? [])
+                    ->map(function ($object) {
+                        return [
+                            'Key' => $object['Key'],
+                        ];
+                    })
+                    ->values()
+                    ->all();
+
+                if (!empty($objects)) {
+                    $s3Client->deleteObjects([
+                        'Bucket' => $bucketName,
+                        'Delete' => [
+                            'Objects' => $objects,
+                            'Quiet' => true,
+                        ],
+                    ]);
+                }
+
+                $params['ContinuationToken'] = $result['NextContinuationToken'] ?? null;
+            } while (!empty($result['IsTruncated']));
+
+            // Setelah kosong, baru hapus bucket
+            $s3Client->deleteBucket([
+                'Bucket' => $bucketName,
+            ]);
+
+            // Hapus record bucket di database
+            $bucket->delete();
+
+            Log::create([
+                'user_id' => Auth::id(),
+                'action' => 'DELETE_BUCKET',
+                'ip_address' => $request->ip(),
+                'details' => "Menghapus bucket {$bucketName} beserta seluruh object di dalamnya.",
+            ]);
+
+            return redirect('/buckets')
+                ->with('success', "Bucket {$bucketName} beserta seluruh object berhasil dihapus.");
+        } catch (AwsException $e) {
+            return redirect('/buckets')
+                ->with('error', 'Gagal menghapus bucket dari MiniStack/S3: ' . $e->getAwsErrorMessage());
+        } catch (\Throwable $e) {
+            return redirect('/buckets')
+                ->with('error', 'Terjadi kesalahan sistem saat menghapus bucket: ' . $e->getMessage());
+        }
+    }
     private function formatBytes(int $bytes): string
     {
         if ($bytes >= 1073741824) {
