@@ -1,58 +1,681 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MiniPort Cloud
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+MiniPort Cloud adalah platform mini **Infrastructure as a Service (IaaS)** berbasis web yang berfokus pada layanan **Object Storage**. Project ini menggunakan **Laravel** sebagai aplikasi utama dan **MiniStack / LocalStack** sebagai emulator layanan AWS S3. Dengan MiniPort, pengguna dapat membuat bucket, mengunggah file, mengelola object, membuat temporary share link, memantau kuota storage, dan melihat log aktivitas melalui dashboard.
 
-## About Laravel
+Project ini dibuat untuk project akhir mata kuliah Komputasi Awan.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fitur Utama
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Authentication
 
-## Learning Laravel
+- Register user.
+- Login user.
+- Logout user.
+- Proteksi halaman menggunakan middleware `auth`.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 2. API Key / Credential Management
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- Generate access key dan secret key.
+- Menampilkan credential aktif.
+- Revoke API key.
+- Secret key hanya ditampilkan sekali setelah generate.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### 3. Object Storage Service
 
-## Agentic Development
+MiniPort menyediakan layanan object storage berbasis bucket S3.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Fitur yang tersedia:
 
-```bash
-composer require laravel/boost --dev
+- Membuat bucket baru.
+- Melihat daftar bucket milik user.
+- Membuka detail bucket.
+- Melihat daftar object/file di dalam bucket.
+- Upload file ke bucket.
+- Download file dari bucket.
+- Delete file/object dari bucket.
+- Delete bucket beserta seluruh object di dalamnya.
+- Temporary share link / presigned URL untuk membagikan file sementara.
 
-php artisan boost:install
+### 4. Storage Quota
+
+- Setiap user memiliki batas storage.
+- Upload ditolak jika ukuran file membuat penggunaan storage melebihi limit.
+- Dashboard menampilkan storage terpakai, sisa storage, limit, dan persentase penggunaan.
+
+### 5. Dashboard Monitoring
+
+Dashboard menampilkan:
+
+- Total bucket.
+- Total object/file.
+- Total storage terpakai.
+- Sisa storage.
+- Limit storage.
+- Persentase penggunaan storage.
+- Credential aktif.
+- Bucket terbaru.
+- Log aktivitas terakhir.
+
+### 6. Activity Log / Audit Trail
+
+Sistem mencatat aktivitas penting user, seperti:
+
+- Generate credential.
+- Revoke credential.
+- Create bucket.
+- Upload object.
+- Download object.
+- Delete object.
+- Share object.
+- Delete bucket.
+
+---
+
+## Teknologi yang Digunakan
+
+- Laravel 13
+- PHP 8.4 container
+- MySQL 8.0
+- MiniStack / LocalStack
+- AWS SDK for PHP
+- Docker Desktop
+- Docker Compose
+- WSL2 Ubuntu
+- Vite
+- Tailwind CSS
+
+---
+
+## Arsitektur Docker
+
+Project ini berjalan menggunakan tiga container utama:
+
+| Service | Fungsi | Port Default |
+|---|---|---|
+| `laravel.test` | Aplikasi Laravel | `8080:8080` |
+| `miniport-db` | Database MySQL | `3306:3306` |
+| `ministack` | Emulator AWS S3/SQS/SNS | `4566:4566` |
+
+Alur komunikasi internal Docker:
+
+```txt
+Laravel Container -> MySQL       : miniport-db:3306
+Laravel Container -> MiniStack   : ministack:4566
+Browser Host      -> Laravel     : localhost:8080
+Browser Host      -> MiniStack   : localhost:4566
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+**Penting:**
 
-## Contributing
+- Backend Laravel harus memakai endpoint internal `http://ministack:4566`.
+- Browser atau presigned URL harus memakai endpoint public `http://localhost:4566` atau `http://127.0.0.1:4566`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## Prasyarat
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Pastikan sudah terinstall:
 
-## Security Vulnerabilities
+- Docker Desktop
+- WSL2 Ubuntu
+- Git
+- VS Code (opsional tapi disarankan)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Cek versi WSL:
 
-## License
+```bash
+wsl -l -v
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Pastikan Ubuntu berjalan dengan VERSION 2.
+
+Cek Docker dari terminal Ubuntu WSL:
+
+```bash
+docker --version
+docker compose version
+docker run hello-world
+```
+
+Jika command Docker tidak terbaca di WSL, aktifkan integrasi WSL di Docker Desktop:
+
+- Docker Desktop > Settings > Resources > WSL Integration > Enable Ubuntu
+
+---
+
+## Cara Menjalankan Project
+
+### 1. Clone Repository
+
+Jalankan dari terminal Ubuntu WSL:
+
+```bash
+cd ~
+git clone -b tunnel https://github.com/ShandyDailami/MiniPort.git
+cd MiniPort
+```
+
+Disarankan menyimpan project di filesystem Linux, misalnya `~/MiniPort`, bukan di `/mnt/c` atau `/mnt/d`, agar Docker dan Laravel lebih stabil.
+
+### 2. Buat File .env
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Atur konfigurasi penting berikut:
+
+```env
+APP_NAME=MiniPort
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://localhost:8080
+
+DB_CONNECTION=mysql
+DB_HOST=miniport-db
+DB_PORT=3306
+DB_DATABASE=miniport
+DB_USERNAME=root
+DB_PASSWORD=
+
+SESSION_DRIVER=database
+QUEUE_CONNECTION=database
+CACHE_STORE=database
+
+AWS_ACCESS_KEY_ID=test
+AWS_SECRET_ACCESS_KEY=test
+AWS_DEFAULT_REGION=ap-southeast-1
+AWS_USE_PATH_STYLE_ENDPOINT=true
+
+MINISTACK_ENDPOINT=http://ministack:4566
+MINISTACK_PUBLIC_ENDPOINT=http://localhost:4566
+MINIPORT_DEFAULT_STORAGE_LIMIT_MB=50
+```
+
+**Keterangan:**
+
+- `MINISTACK_ENDPOINT` digunakan Laravel container untuk mengakses MiniStack.
+- `MINISTACK_PUBLIC_ENDPOINT` digunakan untuk membuat share link yang bisa dibuka dari browser.
+- `MINIPORT_DEFAULT_STORAGE_LIMIT_MB` adalah batas storage default per user.
+
+### 3. Install Dependency Laravel
+
+Gunakan Composer dari container agar tidak perlu install Composer lokal:
+
+```bash
+docker run --rm -u "$(id -u):$(id -g)" \
+  -v "$PWD":/app \
+  -w /app \
+  composer:2 install
+```
+
+### 4. Install dan Build Frontend
+
+```bash
+docker run --rm -u "$(id -u):$(id -g)" \
+  -v "$PWD":/app \
+  -w /app \
+  node:22 npm install
+
+docker run --rm -u "$(id -u):$(id -g)" \
+  -v "$PWD":/app \
+  -w /app \
+  node:22 npm run build
+```
+
+### 5. Jalankan Container
+
+```bash
+docker compose up -d
+```
+
+Cek status container:
+
+```bash
+docker compose ps
+```
+
+Minimal harus ada:
+
+- `laravel.test`
+- `miniport-db`
+- `ministack`
+
+### 6. Generate Application Key
+
+```bash
+docker compose exec laravel.test php artisan key:generate
+```
+
+Jika muncul error permission pada `.env` atau `storage/logs`, jalankan:
+
+```bash
+sudo chown -R $USER:$USER .
+mkdir -p storage/logs bootstrap/cache
+touch storage/logs/laravel.log
+chmod 666 .env
+chmod -R 777 storage bootstrap/cache
+```
+
+Lalu ulangi:
+
+```bash
+docker compose exec laravel.test php artisan key:generate
+```
+
+### 7. Jalankan Migrasi Database
+
+```bash
+docker compose exec laravel.test php artisan migrate
+```
+
+Jika ingin reset database saat development:
+
+```bash
+docker compose exec laravel.test php artisan migrate:fresh
+```
+
+### 8. Bersihkan Cache Laravel
+
+```bash
+docker compose exec laravel.test php artisan optimize:clear
+```
+
+### 9. Akses Aplikasi
+
+Buka browser:
+
+- `http://localhost:8080`
+
+Halaman register:
+
+- `http://localhost:8080/register`
+
+Alur awal penggunaan:
+
+1. Register akun.
+2. Login.
+3. Buka menu API Keys.
+4. Generate API Key.
+5. Buat bucket.
+6. Upload file ke bucket.
+7. Coba download, delete, share link, dan cek dashboard.
+
+---
+
+## Cara Cek MiniStack / S3
+
+Cek health MiniStack:
+
+```bash
+curl http://localhost:4566/_localstack/health
+```
+
+Melihat daftar bucket:
+
+```bash
+docker compose exec ministack awslocal s3 ls
+```
+
+Melihat isi bucket:
+
+```bash
+docker compose exec ministack awslocal s3 ls s3://NAMA_BUCKET --recursive
+```
+
+Upload file manual untuk debug:
+
+```bash
+docker compose exec ministack awslocal s3 cp file.txt s3://NAMA_BUCKET/file.txt
+```
+
+Hapus isi bucket manual:
+
+```bash
+docker compose exec ministack awslocal s3 rm s3://NAMA_BUCKET --recursive
+```
+
+Hapus bucket manual:
+
+```bash
+docker compose exec ministack awslocal s3 rb s3://NAMA_BUCKET
+```
+
+---
+
+## Route Utama
+
+| Method | Path | Fungsi |
+|--------|------|--------|
+| GET | `/` | Dashboard |
+| GET | `/register` | Form register |
+| POST | `/register` | Proses register |
+| GET | `/login` | Form login |
+| POST | `/login` | Proses login |
+| POST | `/logout` | Logout |
+| GET | `/credentials` | Daftar API key |
+| POST | `/credentials` | Generate API key |
+| PATCH | `/credentials/{id}/revoke` | Revoke API key |
+| GET | `/buckets` | Daftar bucket |
+| GET | `/bucket/create` | Form create bucket |
+| POST | `/bucket/create` | Proses create bucket |
+| GET | `/bucket/{bucket}` | Detail bucket dan daftar object |
+| DELETE | `/bucket/{bucket}` | Delete bucket beserta object |
+| POST | `/bucket/{bucket}/objects` | Upload object |
+| GET | `/bucket/{bucket}/objects/download` | Download object |
+| DELETE | `/bucket/{bucket}/objects` | Delete object |
+| GET | `/bucket/{bucket}/objects/share` | Generate temporary share link |
+
+Cek route langsung:
+
+```bash
+docker compose exec laravel.test php artisan route:list
+```
+
+---
+
+## Troubleshooting
+
+### 1. Port 3306 Sudah Dipakai
+
+Error contoh:
+
+```
+Bind for 0.0.0.0:3306 failed: port is already allocated
+```
+
+Biasanya karena MySQL dari Laragon/XAMPP sedang aktif.
+
+Solusi cepat:
+
+- Matikan MySQL Laragon/XAMPP, atau
+- Ubah port host MySQL di `docker-compose.yml`.
+
+Dari:
+
+```yaml
+ports:
+  - '3306:3306'
+```
+
+Menjadi:
+
+```yaml
+ports:
+  - '3307:3306'
+```
+
+Jangan ubah `.env` Laravel. Untuk koneksi antar-container tetap gunakan:
+
+```
+DB_HOST=miniport-db
+DB_PORT=3306
+```
+
+### 2. Port 8080 Sudah Dipakai
+
+Error contoh:
+
+```
+Bind for 0.0.0.0:8080 failed: port is already allocated
+```
+
+Solusi:
+
+Ubah port Laravel di `docker-compose.yml`.
+
+Dari:
+
+```yaml
+ports:
+  - '8080:8080'
+```
+
+Menjadi:
+
+```yaml
+ports:
+  - '8081:8080'
+```
+
+Lalu ubah `.env`:
+
+```
+APP_URL=http://localhost:8081
+```
+
+Akses aplikasi lewat:
+
+- `http://localhost:8081`
+
+### 3. Permission Denied pada .env atau storage/logs
+
+Error contoh:
+
+```
+storage/logs/laravel.log could not be opened in append mode: Permission denied
+file_put_contents(/var/www/html/.env): Permission denied
+```
+
+Solusi:
+
+```bash
+sudo chown -R $USER:$USER .
+mkdir -p storage/logs bootstrap/cache
+touch storage/logs/laravel.log
+chmod 666 .env
+chmod -R 777 storage bootstrap/cache
+```
+
+Kemudian:
+
+```bash
+docker compose exec laravel.test php artisan optimize:clear
+```
+
+### 4. Bucket Ada di Database tetapi Tidak Ada di MiniStack
+
+Error contoh:
+
+```
+NoSuchBucket: The specified bucket does not exist
+```
+
+Cek daftar bucket:
+
+```bash
+docker compose exec ministack awslocal s3 ls
+```
+
+Jika bucket tidak ada di MiniStack, hapus record database dari aplikasi atau buat ulang bucket.
+
+Untuk debug via Tinker:
+
+```bash
+docker compose exec laravel.test php artisan tinker
+App\Models\Bucket::where('bucket_name', 'NAMA_BUCKET')->delete();
+```
+
+### 5. Share Link Tidak Bisa Dibuka
+
+Jika link mengarah ke:
+
+```
+http://ministack:4566/...
+```
+
+itu salah untuk browser host. Pastikan `.env`:
+
+```
+MINISTACK_PUBLIC_ENDPOINT=http://localhost:4566
+```
+
+Jika muncul `SignatureDoesNotMatch`, coba gunakan:
+
+```
+MINISTACK_PUBLIC_ENDPOINT=http://127.0.0.1:4566
+```
+
+Lalu bersihkan cache:
+
+```bash
+docker compose exec laravel.test php artisan optimize:clear
+```
+
+Buat ulang share link.
+
+---
+
+## Perintah Log Debug
+
+Log Laravel:
+
+```bash
+docker compose exec laravel.test tail -n 100 storage/logs/laravel.log
+```
+
+Follow log Laravel:
+
+```bash
+docker compose exec laravel.test tail -f storage/logs/laravel.log
+```
+
+Log container Laravel:
+
+```bash
+docker compose logs laravel.test --tail=100
+```
+
+Log MiniStack:
+
+```bash
+docker compose logs ministack --tail=100
+```
+
+Log MySQL:
+
+```bash
+docker compose logs miniport-db --tail=100
+```
+
+---
+
+## Perintah Docker yang Sering Dipakai
+
+Menjalankan container:
+
+```bash
+docker compose up -d
+```
+
+Melihat status container:
+
+```bash
+docker compose ps
+```
+
+Menghentikan container:
+
+```bash
+docker compose down
+```
+
+Menghentikan container dan menghapus volume:
+
+```bash
+docker compose down -v
+```
+
+> **Catatan:** `docker compose down -v` akan menghapus data MySQL dan MiniStack.
+
+Rebuild / recreate container:
+
+```bash
+docker compose up -d --force-recreate
+```
+
+Masuk ke container Laravel:
+
+```bash
+docker compose exec laravel.test bash
+```
+
+---
+
+## Struktur Project Singkat
+
+```
+MiniPort/
+├── app/
+│   ├── Http/Controllers/
+│   │   ├── AuthController.php
+│   │   ├── BucketController.php
+│   │   ├── CredentialController.php
+│   │   └── UserController.php
+│   └── Models/
+│       ├── Bucket.php
+│       ├── Credential.php
+│       ├── Log.php
+│       └── User.php
+├── database/migrations/
+├── resources/views/
+│   └── frontend/
+│       ├── bucket/
+│       ├── credential/
+│       └── dashboard.blade.php
+├── routes/
+│   └── web.php
+├── docker-compose.yml
+├── composer.json
+├── package.json
+└── README.md
+```
+
+---
+
+## Status Layanan IaaS
+
+MiniPort saat ini berfokus pada layanan:
+
+- **Storage-as-a-Service / Object Storage Service**
+
+Fitur yang sudah berjalan:
+
+- User dashboard.
+- API key management.
+- Bucket management.
+- Object upload.
+- Object listing.
+- Object download.
+- Object delete.
+- Temporary share link.
+- Storage quota.
+- Global storage monitoring.
+- Activity log.
+
+Fitur yang belum termasuk:
+
+- Virtual machine / compute service.
+- Network service.
+- Load balancer.
+- Block storage.
+- Database-as-a-Service.
+- Billing nyata.
+
+---
+
+## Catatan Development
+
+Untuk local development, permission `777` pada folder `storage` dan `bootstrap/cache` masih bisa diterima. Jangan gunakan konfigurasi permission tersebut untuk server production.
+
+Project ini menggunakan MiniStack/LocalStack sebagai emulator cloud, sehingga data bucket dan object berada di volume Docker lokal, bukan di AWS asli.
+
+---
+
+## Tim dan Konteks
+
+Project ini dikembangkan sebagai platform mini IaaS untuk project akhir. Fokus utama sistem adalah menyediakan layanan cloud storage sederhana yang dapat dijalankan secara lokal menggunakan Docker Desktop, WSL2, Laravel, MySQL, dan MiniStack.
