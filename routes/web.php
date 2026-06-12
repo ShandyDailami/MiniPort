@@ -12,7 +12,13 @@ Route::get('/', [UserController::class, 'dashboardView'])->middleware('auth');
 Route::get('/buckets', [BucketController::class, 'index'])->middleware('auth');
 Route::get('/bucket/create', [BucketController::class, 'create'])->middleware('auth');
 Route::post('/bucket/create', [BucketController::class, 'store'])->middleware('auth');
+
 Route::get('/bucket/{bucket}', [BucketController::class, 'show'])->middleware('auth');
+Route::post('/bucket/{bucket}/objects', [BucketController::class, 'uploadObject'])->middleware('auth');
+Route::get('/bucket/{bucket}/objects/download', [BucketController::class, 'downloadObject'])->middleware('auth');
+Route::delete('/bucket/{bucket}/objects', [BucketController::class, 'deleteObject'])->middleware('auth');
+Route::get('/bucket/{bucket}/objects/share', [BucketController::class, 'shareObject'])->middleware('auth');
+
 Route::delete('/bucket/{bucket}', [BucketController::class, 'destroy'])->middleware('auth');
 
 Route::middleware('auth')->group(function () {
