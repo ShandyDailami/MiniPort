@@ -52,8 +52,20 @@ class BucketController extends Controller
 
         DB::beginTransaction();
         try {
-            $s3Client->createBucket([
-                'Bucket' => $bucketName
+            $createParams = [
+                'Bucket' => $bucketName,
+            ];
+
+            if ($region !== 'us-east-1') {
+                $createParams['CreateBucketConfiguration'] = [
+                    'LocationConstraint' => $region,
+                ];
+            }
+
+            $s3Client->createBucket($createParams);
+
+            $s3Client->waitUntil('BucketExists', [
+                'Bucket' => $bucketName,
             ]);
 
             $bucket = Bucket::create([
@@ -85,6 +97,56 @@ class BucketController extends Controller
             abort(403, 'Anda tidak punya akses ke bucket ini.');
         }
 
-        return view('frontend.bucket.show', compact('bucket'));
+        $credential = Credential::where('user_id', Auth::id())
+            ->where('status', 'active')
+            ->first();
+
+        if (!$credential) {
+            return redirect('/credentials')
+                ->with('error', 'Anda belum memiliki API Key aktif.');
+        }
+
+        try {
+            $s3Client = $this->s3Client($bucket->region, $credential);
+
+            $s3Client->headBucket([
+                'Bucket' => $bucket->bucket_name,
+            ]);
+
+            $result = $s3Client->listObjectsV2([
+                'Bucket' => $bucket->bucket_name,
+            ]);
+
+            $objects = collect($result['Contents'] ?? [])->map(function ($object) {
+                return [
+                    'key' => $object['Key'],
+                    'size' => $object['Size'],
+                    'last_modified' => $object['LastModified'] ?? null,
+                ];
+            });
+
+            return view('frontend.bucket.show', compact('bucket', 'objects'));
+        } catch (\Aws\Exception\AwsException $e) {
+            if ($e->getAwsErrorCode() === 'NoSuchBucket') {
+                return redirect('/buckets')
+                    ->with('error', "Bucket {$bucket->bucket_name} ada di database, tetapi tidak ada di MiniStack/S3. Hapus record DB atau buat ulang bucket di MiniStack.");
+            }
+
+            return redirect('/buckets')
+                ->with('error', 'Gagal membuka bucket: ' . $e->getAwsErrorMessage());
+        }
+    }
+    private function s3Client(string $region, Credential $credential): S3Client
+    {
+        return new S3Client([
+            'version' => 'latest',
+            'region' => $region,
+            'endpoint' => env('MINISTACK_ENDPOINT', 'http://ministack:4566'),
+            'use_path_style_endpoint' => true,
+            'credentials' => [
+                'key' => $credential->access_key,
+                'secret' => $credential->secret_key,
+            ],
+        ]);
     }
 }
