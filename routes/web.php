@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BucketController;
 use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BillingController;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/', [UserController::class, 'view'])->middleware('auth');
@@ -25,6 +26,25 @@ Route::middleware('auth')->group(function () {
     Route::get('/credentials', [CredentialController::class, 'index']);
     Route::post('/credentials', [CredentialController::class, 'store']);
     Route::patch('/credentials/{id}/revoke', [CredentialController::class, 'revoke']);
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/billing', [BillingController::class, 'index']);
+
+    Route::post('/billing/subscribe/{plan}', [
+        BillingController::class,
+        'subscribe'
+    ]);
+
+    Route::post('/billing/invoices/{invoice}/pay', [
+        BillingController::class,
+        'pay'
+    ]);
+
+    Route::patch('/billing/subscriptions/{subscription}/cancel', [
+        BillingController::class,
+        'cancel'
+    ]);
 });
 
 Route::get('/login', [AuthController::class, 'loginView'])->name('login');

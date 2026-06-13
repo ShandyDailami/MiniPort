@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bucket;
 use App\Models\Credential;
 use App\Models\Log;
+use App\Models\Subscription;
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use Illuminate\Http\Request;
@@ -127,7 +128,7 @@ class BucketController extends Controller
             });
 
             $usedStorageBytes = $this->getUserStorageUsageBytes(Auth::id(), $credential);
-            $storageLimitBytes = $this->getStorageLimitBytes();
+            $storageLimitBytes = $this->getStorageLimitBytes(Auth::id());
 
             $usedStorageText = $this->formatBytes($usedStorageBytes);
             $storageLimitText = $this->formatBytes($storageLimitBytes);
@@ -177,7 +178,7 @@ class BucketController extends Controller
 
         $fileSizeBytes = $file->getSize();
         $usedStorageBytes = $this->getUserStorageUsageBytes(Auth::id(), $credential);
-        $storageLimitBytes = $this->getStorageLimitBytes();
+        $storageLimitBytes = $this->getStorageLimitBytes(Auth::id());
 
         if (($usedStorageBytes + $fileSizeBytes) > $storageLimitBytes) {
             return redirect()
@@ -506,9 +507,17 @@ class BucketController extends Controller
 
         return $bytes . ' bytes';
     }
-    private function getStorageLimitBytes(): int
+    private function getStorageLimitBytes(int $userId): int
     {
-        $limitMb = (int) env('MINIPORT_DEFAULT_STORAGE_LIMIT_MB', 50);
+        $subscription = Subscription::with('plan')
+            ->where('user_id', $userId)
+            ->where('status', 'active')
+            ->whereDate('end_date', '>=', now()->toDateString())
+            ->latest()
+            ->first();
+
+        $limitMb = $subscription?->plan?->storage_limit_mb
+            ?? (int) env('MINIPORT_DEFAULT_STORAGE_LIMIT_MB', 50);
 
         return $limitMb * 1024 * 1024;
     }

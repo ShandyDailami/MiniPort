@@ -41,7 +41,7 @@
                 <a href="/credentials" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
                     API Keys
                 </a>
-                <a href="#" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
+                <a href="/billing" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
                     Billing
                 </a>
                 <a href="#" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
