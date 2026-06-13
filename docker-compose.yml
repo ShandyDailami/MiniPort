@@ -10,6 +10,18 @@ services:
       - APP_ENV=local
       - DB_HOST=miniport-db
       - PHP_OPCACHE_ENABLE=0
+
+      # Batas request Nginx
+      - NGINX_CLIENT_MAX_BODY_SIZE=512M
+
+      # Batas upload PHP
+      - PHP_UPLOAD_MAX_FILE_SIZE=500M
+      - PHP_POST_MAX_SIZE=512M
+
+      # Resource dan waktu proses upload
+      - PHP_MEMORY_LIMIT=768M
+      - PHP_MAX_EXECUTION_TIME=600
+      - PHP_MAX_INPUT_TIME=600
     networks:
       - miniport-network
     depends_on:

@@ -82,7 +82,7 @@
                 @enderror
 
                 <p class="font-bold text-sm text-slate-700 mt-3">
-                    Maksimal file: 10 MB. File akan disimpan sebagai object di bucket MiniStack/S3.
+                    Maksimal file: {{ $maxUploadMb ?? 500 }} MB.
                 </p>
             </div>
 

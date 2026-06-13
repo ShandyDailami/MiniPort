@@ -138,12 +138,15 @@ class BucketController extends Controller
                 $usagePercentage = min(100, ($usedStorageBytes / $storageLimitBytes) * 100);
             }
 
+            $maxUploadMb = (int) env('MINIPORT_MAX_UPLOAD_MB', 500);
+
             return view('frontend.bucket.show', compact(
                 'bucket',
                 'objects',
                 'usedStorageText',
                 'storageLimitText',
-                'usagePercentage'
+                'usagePercentage',
+                'maxUploadMb'
             ));
         } catch (\Aws\Exception\AwsException $e) {
             if ($e->getAwsErrorCode() === 'NoSuchBucket') {
@@ -161,9 +164,23 @@ class BucketController extends Controller
             abort(403, 'Anda tidak punya akses ke bucket ini.');
         }
 
-        $request->validate([
-            'object_file' => 'required|file|max:10240', // max 10 MB
-        ]);
+        $maxUploadMb = (int) env('MINIPORT_MAX_UPLOAD_MB', 500);
+        $maxUploadKb = $maxUploadMb * 1024;
+
+        $request->validate(
+            [
+                'object_file' => [
+                    'required',
+                    'file',
+                    "max:{$maxUploadKb}",
+                ],
+            ],
+            [
+                'object_file.required' => 'File wajib dipilih.',
+                'object_file.file' => 'Data yang diupload harus berupa file.',
+                'object_file.max' => "Ukuran file maksimal {$maxUploadMb} MB.",
+            ]
+        );
 
         $credential = Credential::where('user_id', Auth::id())
             ->where('status', 'active')
