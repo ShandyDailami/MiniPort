@@ -15,7 +15,7 @@
     {{-- Container Utama Formulir --}}
     <div class="max-w-2xl mx-auto w-full">
         <section class="border-4 border-black bg-[#E9D5FF] p-6 md:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-md relative z-10">
-            <h1 class="text-4xl font-black uppercase mb-2">🪣 Buat Bucket Baru</h1>
+            <h1 class="text-4xl font-black uppercase mb-2"> Buat Bucket Baru</h1>
             <p class="font-bold text-slate-800 mb-8 border-b-4 border-black pb-4">Tentukan nama unik dan lokasi server untuk bucket penyimpanan S3 Anda.</p>
 
             {{-- Alert Sukses (Jika redirect back with success) --}}

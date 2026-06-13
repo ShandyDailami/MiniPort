@@ -1,91 +1,174 @@
-@extends('layout.app')
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-[#FDFBF7]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MiniPort Cloud Console</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
 
-@section('title', '- Login')
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="h-full overflow-hidden bg-[#FDFBF7] text-black">
 
-@section('content')
-
-<div class="md:flex-row flex h-screen w-full items-center justify-center sm:flex-col">
-    @if (session('success'))
-    <div x-data="{ show: true }"
-        x-show="show"
-        x-init="setTimeout(() => window.location.href = '/login', 3000)"
-        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center"
-        x-transition.opacity.duration.500ms>
-
-        <div class="bg-white border-2 border-black px-8 py-10 rounded-md shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-1/3 text-center flex flex-col items-center">
-
-            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-            </div>
-
-            <h2 class="text-3xl font-bold mb-2">Berhasil!</h2>
-            <p class="text-slate-600 font-medium mb-6">
-                {{ session('success') }}
-            </p>
-
-            <div class="w-6 h-6 border-4 border-slate-300 border-t-[#D72F19] rounded-full animate-spin"></div>
-        </div>
-    </div>
-    @endif
-    <div class="fixed md:w-1/2 sm:w-0 mb-5 top-0">
-        @error('error')
-            <x-alert-error :message="$message" />
-        @enderror
-    </div>
-    <div class="md:w-1/2 sm:w-full h-full flex flex-col justify-center items-center bg-[#F9C25B]">
-            <form action="" method="POST" class="w-full px-5 md:px-30">
-                @csrf
-                <h1 class="text-5xl font-bold mb-2">Log in to your account</h1>
-                <p class="text-slate-600 font-medium mb-5">Good to see you back! Come on, log in to your account.</p>
-                <label for="name" class="block mb-5">
-                    <p class="font-medium">Username</p>
-                    <input
-                        class="border-2 w-full px-4 py-4 rounded-md bg-white outline-none shadow-[4px_4px] placeholder:font-medium"
-                        type="text"
-                        id="name"
-                        placeholder="Enter your name">
-                </label>
-                <label for="email" class="block mb-5">
-                        <p class="font-medium">Email</p>
-                        <input
-                        class="border-2 w-full px-4 py-4 rounded-md bg-white outline-none shadow-[4px_4px] placeholder:font-medium @error('email') border-red-500 shadow-red-500 @else border-black shadow-black @enderror"
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="Enter your email"
-                        value="{{ old('email') }}">
-                        @error('email')
-                            <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
-                        @enderror
-                </label>
-                <label for="password" class="block mb-7">
-                    <p class="font-medium">Password</p>
-                    <input
-                        class="border-2 w-full px-4 py-4 rounded-md bg-white outline-none shadow-[4px_4px] placeholder:font-medium @error('password') border-red-500 shadow-red-500 @else border-black shadow-black @enderror"
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Enter your password">
-                        @error('password')
-                            <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
-                        @enderror
-                </label>
-                <button class="mb-5 border-2 border-black w-full px-4 py-4 rounded-md bg-[#D72F19] text-white font-medium shadow-[4px_4px_black] cursor-pointer">Sign In</button>
-                {{-- <div class="flex justify-between items-center mb-5">
-                    <hr class="w-1/3 text-gray-600">
-                    <p class="text-center font-medium text-slate-600">Or continue with</p>
-                    <hr class="w-1/3 text-gray-600">
+    {{-- WRAPPER UTAMA SPLIT PANEL --}}
+    <div class="h-full w-full flex flex-col md:flex-row">
+        
+        {{-- PANEL KIRI: FORMULIR AUTENTIKASI (Kuning Neobrutalist `#F9C25B`) --}}
+        <div class="w-full md:w-1/2 h-full bg-[#F9C25B] flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-20 xl:px-24 overflow-y-auto relative">
+            
+            {{-- Alert Notifikasi Sukses --}}
+            @if (session('success'))
+            <div x-data="{ show: true }"
+                 x-show="show"
+                 class="mb-6 border-4 border-black bg-[#34D399] p-4 font-black shadow-[4px_4px_black] text-sm flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span>✅</span>
+                    <span>{{ session('success') }}</span>
                 </div>
-                <button class="flex items-center justify-center gap-2 mb-5 border-2 border-black w-full px-4 py-4 rounded-md bg-white text-black font-medium shadow-[4px_4px_black] cursor-pointer">
-                    <svg class="inline-block" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 16 16"><g fill="none" fill-rule="evenodd" clip-rule="evenodd"><path fill="#f44336" d="M7.209 1.061c.725-.081 1.154-.081 1.933 0a6.57 6.57 0 0 1 3.65 1.82a100 100 0 0 0-1.986 1.93q-1.876-1.59-4.188-.734q-1.696.78-2.362 2.528a78 78 0 0 1-2.148-1.658a.26.26 0 0 0-.16-.027q1.683-3.245 5.26-3.86" opacity="0.987"/><path fill="#ffc107" d="M1.946 4.92q.085-.013.161.027a78 78 0 0 0 2.148 1.658A7.6 7.6 0 0 0 4.04 7.99q.037.678.215 1.331L2 11.116Q.527 8.038 1.946 4.92" opacity="0.997"/><path fill="#448aff" d="M12.685 13.29a26 26 0 0 0-2.202-1.74q1.15-.812 1.396-2.228H8.122V6.713q3.25-.027 6.497.055q.616 3.345-1.423 6.032a7 7 0 0 1-.51.49" opacity="0.999"/><path fill="#43a047" d="M4.255 9.322q1.23 3.057 4.51 2.854a3.94 3.94 0 0 0 1.718-.626q1.148.812 2.202 1.74a6.62 6.62 0 0 1-4.027 1.684a6.4 6.4 0 0 1-1.02 0Q3.82 14.524 2 11.116z" opacity="0.993"/></g></svg>
-                    <span>Continue with Google</span>
-                </button> --}}
-                <p class="font-medium text-slate-600">Don't have an account? <a href="/register" class="text-slate-700">Sign up here</a> </p>
-            </form>
+                <button @click="show = false" class="font-black hover:scale-110">&times;</button>
+            </div>
+            @endif
+
+            {{-- Alert Notifikasi Error --}}
+            @if($errors->any() || session('error'))
+            <div class="mb-6 border-4 border-black bg-[#FF4545] text-white p-4 font-black shadow-[4px_4px_black] text-sm">
+                <div class="flex items-center gap-2 mb-1">
+                    <i data-lucide="alert-octagon" class="h-4 w-4 stroke-[3]"></i>
+                    <span class="uppercase">Gagal Masuk!</span>
+                </div>
+                <p class="font-semibold text-xs leading-tight text-white/95">
+                    {{ $errors->first() ?? session('error') }}
+                </p>
+            </div>
+            @endif
+
+            <div class="mx-auto w-full max-w-sm lg:w-96">
+                {{-- LOGO --}}
+                <div class="inline-flex items-center gap-2 border-4 border-black bg-white p-2.5 px-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-8">
+                    <span class="text-2xl">🍞</span>
+                    <span class="text-lg font-black uppercase tracking-tight text-black">TOASTING</span>
+                </div>
+
+                <h1 class="text-4xl font-black uppercase tracking-tight text-black mb-2">Log in to Account</h1>
+                <p class="text-slate-800 font-bold text-xs mb-8">Senang melihat Anda kembali! Silakan masuk ke akun konsol sandbox Anda.</p>
+
+                {{-- FORM LOGIN --}}
+                <form action="{{ url('/login') }}" method="POST" class="space-y-6 m-0">
+                    @csrf
+
+                    <!-- Input Email -->
+                    <div class="space-y-1.5">
+                        <label for="email" class="block text-xs font-black uppercase tracking-wider text-black">Alamat Email</label>
+                        <div class="relative">
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                placeholder="Masukkan email Anda"
+                                value="{{ old('email') }}"
+                                required
+                                class="w-full border-4 border-black bg-white p-4 pl-12 font-bold text-sm shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] focus:outline-none transition-all rounded-none placeholder-slate-400 @error('email') border-red-500 shadow-red-500 @enderror"
+                            >
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                                <i data-lucide="mail" class="h-5 w-5 text-black stroke-[2.5]"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Password -->
+                    <div class="space-y-1.5" x-data="{ show: false }">
+                        <label for="password" class="block text-xs font-black uppercase tracking-wider text-black">Kata Sandi</label>
+                        <div class="relative">
+                            <input
+                                :type="show ? 'text' : 'password'"
+                                id="password"
+                                name="password"
+                                placeholder="Masukkan kata sandi"
+                                required
+                                class="w-full border-4 border-black bg-white p-4 pl-12 pr-12 font-bold text-sm shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] focus:outline-none transition-all rounded-none placeholder-slate-400 @error('password') border-red-500 shadow-red-500 @enderror"
+                            >
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                                <i data-lucide="lock" class="h-5 w-5 text-black stroke-[2.5]"></i>
+                            </div>
+                            <button 
+                                type="button" 
+                                @click="show = !show" 
+                                class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500 hover:text-black transition-colors"
+                            >
+                                <i :data-lucide="show ? 'eye-off' : 'eye'" class="h-4 w-4 stroke-[2.5]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Submit -->
+                    <div class="pt-2">
+                        <button 
+                            type="submit" 
+                            class="w-full border-4 border-black bg-[#D72F19] text-white p-4 font-black uppercase tracking-wider text-sm shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all cursor-pointer text-center"
+                        >
+                            Masuk->
+                        </button>
+                    </div>
+                </form>
+
+                {{-- NAVIGASI DAFTAR --}}
+                <div class="mt-8 border-t-2 border-black pt-4 text-center">
+                    <p class="text-xs font-bold text-slate-800">
+                        Belum memiliki akun MiniPort? 
+                        <a href="{{ url('/register') }}" class="text-black font-black underline hover:text-purple-900 transition-colors">Daftar Akun Baru</a>
+                    </p>
+                </div>
+            </div>
         </div>
-        <div class="md:block md:w-1/2 h-full bg-[url('/public/img/auth-icon.jpg')] bg-cover bg-center sm:hidden sm:w-0"></div>
+
+        {{-- PANEL KANAN: GAMBAR PEMANIS RETRO (Sembunyi di mobile) --}}
+        <div class="hidden md:block md:w-1/2 h-full relative overflow-hidden">
+            <div 
+                class="absolute inset-0 bg-cover bg-center transition-all duration-700 hover:scale-105"
+                style="background-image: url('{{ asset('img/auth-icon.jpg') }}');"
+            ></div>
+            
+            <!-- Overlay Gelap Retro Semitransparan -->
+            <div class="absolute inset-0 bg-black/20"></div>
+
+            <!-- Tumpukan Badge Neobrutalism Floating di Atas Gambar -->
+            <div class="absolute bottom-10 left-10 z-20 space-y-4">
+                <div class="border-4 border-black bg-[#34D399] p-4 shadow-[6px_6px_0px_rgba(0,0,0,1)] max-w-sm rounded-none">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xl">🛡️</span>
+                        <h4 class="text-xs font-black uppercase tracking-wider text-black">MiniStack S3 Sandbox</h4>
+                    </div>
+                    <p class="text-[10px] font-bold text-slate-800 leading-tight">
+                        Mengakses jaringan file manager lokal virtualisasi Docker yang terenkripsi dan aman.
+                    </p>
+                </div>
+
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 border-2 border-black bg-[#FDE047] font-black text-[10px] uppercase shadow-[3px_3px_black]">
+                    <i data-lucide="cpu" class="h-3.5 w-3.5 stroke-[2.5]"></i> Sandbox Demo Mode
+                </span>
+            </div>
+        </div>
+
     </div>
 
-@endsection
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
