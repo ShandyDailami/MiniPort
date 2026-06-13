@@ -31,6 +31,7 @@
         </a>
     </div>
 
+<<<<<<< HEAD
     {{-- 2. MODAL PRESIGNED SHARE URL (RETRO ONE-TIME POP-UP) --}}
     @if(session('share_url'))
     <div x-data="{ openShareModal: true }" x-show="openShareModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -42,6 +43,80 @@
                 <button @click="openShareModal = false" class="border-2 border-black bg-[#FF4545] p-1 text-white shadow-[1px_1px_black] hover:translate-y-0.5 transition-all">
                     <i data-lucide="x" class="h-4 w-4 stroke-[3]"></i>
                 </button>
+=======
+    @if (session('success'))
+        <div class="mb-6 border-4 border-black bg-green-400 p-4 font-black text-lg shadow-[4px_4px_black]">
+            ✅ {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="mb-6 border-4 border-black bg-[#D72F19] text-white p-4 font-black text-lg shadow-[4px_4px_black]">
+            ⚠️ {{ session('error') }}
+        </div>
+    @endif
+
+    @if (session('share_url'))
+        <div class="mb-6 border-4 border-black bg-cyan-300 p-5 shadow-[4px_4px_black]">
+            <h3 class="font-black uppercase text-xl mb-3">🔗 Temporary Share Link</h3>
+
+            <p class="font-bold mb-2">
+                Object: <span class="font-mono">{{ session('share_key') }}</span>
+            </p>
+
+            <p class="font-bold mb-4">
+                Berlaku: {{ session('share_expires') }} menit
+            </p>
+
+            <input
+                type="text"
+                readonly
+                value="{{ session('share_url') }}"
+                onclick="this.select()"
+                class="w-full border-4 border-black bg-white px-4 py-3 font-mono text-sm shadow-[3px_3px_black]"
+            >
+
+            <p class="font-bold text-sm mt-3">
+                Klik input di atas lalu tekan CTRL + C untuk copy link.
+            </p>
+        </div>
+    @endif
+
+    <section class="border-4 border-black bg-[#F9C25B] p-8 shadow-[8px_8px_black] mb-8">
+        <h1 class="text-4xl font-black uppercase mb-4">🪣 {{ $bucket->bucket_name }}</h1>
+        <p class="font-bold text-xl">Region: {{ $bucket->region }}</p>
+        <p class="font-bold text-xl">Dibuat: {{ $bucket->created_at->format('d M Y, H:i') }}</p>
+    </section>
+
+    <section class="border-4 border-black bg-[#E9D5FF] p-8 shadow-[8px_8px_black] mb-8">
+        <h2 class="text-3xl font-black uppercase mb-6">⬆️ Upload File</h2>
+
+        <form action="/bucket/{{ $bucket->id }}/objects" method="POST" enctype="multipart/form-data" class="flex flex-col gap-6">
+            @csrf
+
+            <div>
+                <label for="object_file" class="block font-black uppercase text-xl mb-2">
+                    Pilih File
+                </label>
+
+                <input
+                    type="file"
+                    id="object_file"
+                    name="object_file"
+                    required
+                    class="w-full border-4 border-black bg-white px-4 py-4 font-bold shadow-[4px_4px_black]"
+                >
+
+                @error('object_file')
+                    <div class="mt-3 font-bold text-white bg-[#D72F19] border-2 border-black inline-block px-3 py-1 shadow-[2px_2px_black]">
+                        {{ $message }}
+                    </div>
+                @enderror
+
+                <p class="font-bold text-sm text-slate-700 mt-3">
+                    Maksimal file: {{ $maxUploadMb ?? 500 }} MB.
+                </p>
+>>>>>>> 831419a3e8d78f62ad59c30c48981e320487cfa0
             </div>
 
             <p class="text-xs font-bold text-slate-800 mb-4 leading-relaxed">

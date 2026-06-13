@@ -2,36 +2,75 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\Bucket;
 use App\Models\Credential;
 use App\Models\Log;
-use App\Models\Bucket; // Tambahkan ini
-use Aws\S3\S3Client;   // Tambahkan ini
-use Illuminate\Http\Request;
+use App\Models\Subscription;
+use Aws\S3\S3Client;
 use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+    /**
+     * Menampilkan halaman frontend lama jika masih digunakan.
+     */
     public function view()
     {
         $user = Auth::user();
+
         return view('frontend.index', [
-            'name' => $user->name
+            'name' => $user->name,
         ]);
     }
 
-    public function dashboardView(Request $request)
+    /**
+     * Menampilkan dashboard utama MiniPort.
+     */
+    public function dashboardView()
     {
         $user = Auth::user();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Credential aktif
+        |--------------------------------------------------------------------------
+        */
+
         $activeCredential = Credential::where('user_id', $user->id)
             ->where('status', 'active')
+            ->latest()
             ->first();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Subscription dan paket aktif
+        |--------------------------------------------------------------------------
+        */
+
+        $activeSubscription = Subscription::with('plan')
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->whereDate('start_date', '<=', now()->toDateString())
+            ->whereDate('end_date', '>=', now()->toDateString())
+            ->latest()
+            ->first();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Log aktivitas terbaru
+        |--------------------------------------------------------------------------
+        */
 
         $logs = Log::where('user_id', $user->id)
             ->latest()
             ->take(5)
             ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Bucket milik user
+        |--------------------------------------------------------------------------
+        */
 
         $buckets = Bucket::where('user_id', $user->id)
             ->latest()
@@ -39,76 +78,158 @@ class UserController extends Controller
 
         $latestBuckets = $buckets->take(3);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Metrik Object Storage
+        |--------------------------------------------------------------------------
+        */
+
         $totalBuckets = $buckets->count();
         $totalObjects = 0;
         $usedStorageBytes = 0;
+        $unavailableBuckets = 0;
 
         if ($activeCredential) {
             foreach ($buckets as $bucket) {
                 try {
-                    $s3Client = new S3Client([
-                        'version' => 'latest',
-                        'region' => $bucket->region,
-                        'endpoint' => env('MINISTACK_ENDPOINT', 'http://ministack:4566'),
-                        'use_path_style_endpoint' => true,
-                        'credentials' => [
-                            'key' => $activeCredential->access_key,
-                            'secret' => $activeCredential->secret_key,
-                        ],
+                    $s3Client = $this->createS3Client(
+                        $bucket->region,
+                        $activeCredential
+                    );
+
+                    /*
+                     * Paginator memastikan seluruh object dihitung,
+                     * termasuk jika jumlah object melebihi 1.000.
+                     */
+                    $pages = $s3Client->getPaginator('ListObjectsV2', [
+                        'Bucket' => $bucket->bucket_name,
                     ]);
 
-                    $params = [
-                        'Bucket' => $bucket->bucket_name,
-                    ];
-
-                    do {
-                        $result = $s3Client->listObjectsV2($params);
-
-                        foreach ($result['Contents'] ?? [] as $object) {
+                    foreach ($pages as $page) {
+                        foreach ($page['Contents'] ?? [] as $object) {
                             $totalObjects++;
-                            $usedStorageBytes += $object['Size'];
+                            $usedStorageBytes += (int) $object['Size'];
                         }
-
-                        $params['ContinuationToken'] = $result['NextContinuationToken'] ?? null;
-                    } while (!empty($result['IsTruncated']));
-
+                    }
                 } catch (\Throwable $e) {
-                    // Bucket yang error dilewati agar dashboard tetap bisa dibuka.
-                    continue;
+                    /*
+                     * Bucket yang tidak tersedia dilewati agar dashboard
+                     * tetap dapat dibuka.
+                     */
+                    $unavailableBuckets++;
                 }
             }
         }
 
-        $storageLimitBytes = (int) env('MINIPORT_DEFAULT_STORAGE_LIMIT_MB', 50) * 1024 * 1024;
-        $remainingStorageBytes = max(0, $storageLimitBytes - $usedStorageBytes);
+        /*
+        |--------------------------------------------------------------------------
+        | Storage quota berdasarkan subscription
+        |--------------------------------------------------------------------------
+        |
+        | Jika user memiliki subscription aktif, quota diambil dari plan.
+        | Jika tidak, quota menggunakan nilai default dari .env.
+        |
+        */
+
+        $defaultStorageLimitMb = (int) env(
+            'MINIPORT_DEFAULT_STORAGE_LIMIT_MB',
+            50
+        );
+
+        $storageLimitMb = (int) (
+            $activeSubscription?->plan?->storage_limit_mb
+            ?? $defaultStorageLimitMb
+        );
+
+        $storageLimitBytes = $storageLimitMb * 1024 * 1024;
+
+        $remainingStorageBytes = max(
+            0,
+            $storageLimitBytes - $usedStorageBytes
+        );
 
         $usagePercentage = 0;
+
         if ($storageLimitBytes > 0) {
-            $usagePercentage = min(100, ($usedStorageBytes / $storageLimitBytes) * 100);
+            $usagePercentage = min(
+                100,
+                ($usedStorageBytes / $storageLimitBytes) * 100
+            );
         }
 
-        $planName = $user->plan_name ?? 'Basic';
+        $planName = $activeSubscription?->plan?->plan_name
+            ?? 'Default';
+
+        /*
+        |--------------------------------------------------------------------------
+        | Kirim data ke dashboard
+        |--------------------------------------------------------------------------
+        */
 
         return view('frontend.dashboard', [
             'name' => $user->name,
+
             'activeCredential' => $activeCredential,
+            'activeSubscription' => $activeSubscription,
+
             'logs' => $logs,
             'buckets' => $buckets,
             'latestBuckets' => $latestBuckets,
+
             'planName' => $planName,
+            'storageLimitMb' => $storageLimitMb,
 
             'totalBuckets' => $totalBuckets,
             'totalObjects' => $totalObjects,
+            'unavailableBuckets' => $unavailableBuckets,
+
             'usedStorageBytes' => $usedStorageBytes,
             'storageLimitBytes' => $storageLimitBytes,
             'remainingStorageBytes' => $remainingStorageBytes,
             'usagePercentage' => $usagePercentage,
 
-            'usedStorageText' => $this->formatBytes($usedStorageBytes),
-            'storageLimitText' => $this->formatBytes($storageLimitBytes),
-            'remainingStorageText' => $this->formatBytes($remainingStorageBytes),
+            'usedStorageText' => $this->formatBytes(
+                $usedStorageBytes
+            ),
+
+            'storageLimitText' => $this->formatBytes(
+                $storageLimitBytes
+            ),
+
+            'remainingStorageText' => $this->formatBytes(
+                $remainingStorageBytes
+            ),
         ]);
     }
+
+    /**
+     * Membuat client MiniStack / S3.
+     */
+    private function createS3Client(
+        string $region,
+        Credential $credential
+    ): S3Client {
+        return new S3Client([
+            'version' => 'latest',
+            'region' => $region,
+
+            'endpoint' => env(
+                'MINISTACK_ENDPOINT',
+                'http://ministack:4566'
+            ),
+
+            'use_path_style_endpoint' => true,
+
+            'credentials' => [
+                'key' => $credential->access_key,
+                'secret' => $credential->secret_key,
+            ],
+        ]);
+    }
+
+    /**
+     * Mengubah byte menjadi format yang mudah dibaca.
+     */
     private function formatBytes(int $bytes): string
     {
         if ($bytes >= 1073741824) {
