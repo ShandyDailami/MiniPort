@@ -42,7 +42,7 @@ services:
 
   # Container MiniStack / LocalStack (AWS Emulator)
   ministack:
-    image: localstack/localstack
+    image: localstack/localstack:4.4.0
     ports:
       - '4566:4566'
     environment:

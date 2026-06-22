@@ -6,6 +6,8 @@ use App\Models\Invoice;
 use App\Models\Log;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\Bucket;
+use App\Models\Credential;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +17,8 @@ class BillingController extends Controller
 {
     public function index()
     {
+        $user = Auth::user();
+
         $plans = Plan::with('service')
             ->whereHas('service', function ($query) {
                 $query->where('is_active', true);
@@ -22,197 +26,145 @@ class BillingController extends Controller
             ->orderBy('price')
             ->get();
 
+        // Menggunakan filter tanggal yang sama persis dengan UserController agar sinkron
         $activeSubscription = Subscription::with('plan')
-            ->where('user_id', Auth::id())
+            ->where('user_id', $user->id)
             ->where('status', 'active')
+            ->whereDate('start_date', '<=', now()->toDateString())
             ->whereDate('end_date', '>=', now()->toDateString())
             ->latest()
             ->first();
 
         $invoices = Invoice::with('subscription.plan')
-            ->where('user_id', Auth::id())
+            ->where('user_id', $user->id)
             ->latest()
             ->take(10)
             ->get();
 
+        // === AMBIL UKURAN PENYIMPANAN RIIL DARI MINISTACK S3 ===
+        $activeCredential = Credential::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        $buckets = Bucket::where('user_id', $user->id)->get();
+        $usedStorageBytes = 0;
+
+        if ($activeCredential) {
+            foreach ($buckets as $bucket) {
+                try {
+                    $s3Client = new \Aws\S3\S3Client([
+                        'version' => 'latest',
+                        'region' => $bucket->region,
+                        'endpoint' => env('MINISTACK_ENDPOINT', 'http://ministack:4566'),
+                        'use_path_style_endpoint' => true,
+                        'credentials' => [
+                            'key' => $activeCredential->access_key,
+                            'secret' => $activeCredential->secret_key,
+                        ],
+                    ]);
+
+                    $pages = $s3Client->getPaginator('ListObjectsV2', [
+                        'Bucket' => $bucket->bucket_name,
+                    ]);
+
+                    foreach ($pages as $page) {
+                        foreach ($page['Contents'] ?? [] as $object) {
+                            $usedStorageBytes += (int) $object['Size'];
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Berjaga-jaga jika localstack mati
+                }
+            }
+        }
+
+        // Ambil batasan limit dari database secara dinamis
+        $defaultStorageLimitMb = (int) env('MINIPORT_DEFAULT_STORAGE_LIMIT_MB', 50);
+        $planName = $activeSubscription ? $activeSubscription->plan->plan_name : 'Free';
+        $planPrice = $activeSubscription ? $activeSubscription->plan->price : 0;
+        $storageLimitMb = $activeSubscription ? $activeSubscription->plan->storage_limit_mb : $defaultStorageLimitMb;
+
+        $storageLimitBytes = $storageLimitMb * 1024 * 1024;
+        
+        $usagePercentage = 0;
+        if ($storageLimitBytes > 0) {
+            $usagePercentage = min(100, ($usedStorageBytes / $storageLimitBytes) * 100);
+        }
+
+        $usedStorageText = $this->formatBytes($usedStorageBytes);
+        $storageLimitText = $storageLimitMb >= 1024 ? ($storageLimitMb / 1024) . ' GB' : $storageLimitMb . ' MB';
+
         return view('frontend.billing.index', compact(
             'plans',
             'activeSubscription',
-            'invoices'
+            'invoices',
+            'planName',
+            'planPrice',
+            'usedStorageText',
+            'storageLimitText',
+            'usagePercentage'
         ));
     }
 
     public function subscribe(Request $request, Plan $plan)
     {
         if (!$plan->service || !$plan->service->is_active) {
-            return redirect()
-                ->back()
-                ->with('error', 'Paket tidak tersedia.');
+            return redirect()->back()->with('error', 'Paket tidak tersedia.');
         }
 
         $userId = Auth::id();
 
-        $currentSubscription = Subscription::where('user_id', $userId)
-            ->where('status', 'active')
-            ->whereDate('end_date', '>=', now()->toDateString())
-            ->latest()
-            ->first();
-
-        if ($currentSubscription?->plan_id === $plan->id) {
-            return redirect()
-                ->back()
-                ->with('error', 'Paket tersebut sudah aktif.');
-        }
-
         DB::beginTransaction();
-
         try {
-            // Batalkan checkout lama yang belum dibayar.
-            $pendingSubscriptions = Subscription::where('user_id', $userId)
-                ->where('status', 'pending')
-                ->pluck('id');
+            // Bersihkan semua instansi paket pending/active yang lama
+            Subscription::where('user_id', $userId)
+                ->whereIn('status', ['active', 'pending'])
+                ->update([
+                    'status' => 'cancelled',
+                    'end_date' => now()->toDateString()
+                ]);
 
-            Invoice::where('user_id', $userId)
-                ->whereIn('subscription_id', $pendingSubscriptions)
-                ->where('status', 'pending')
-                ->update(['status' => 'cancelled']);
-
-            Subscription::whereIn('id', $pendingSubscriptions)
-                ->update(['status' => 'cancelled']);
-
-            $isFree = (float) $plan->price <= 0;
-
+            // BYPASS UTAMA: Langsung buat status 'active' tanpa pending
             $subscription = Subscription::create([
                 'user_id' => $userId,
                 'plan_id' => $plan->id,
                 'start_date' => now()->toDateString(),
                 'end_date' => now()->addDays(30)->toDateString(),
-                'status' => $isFree ? 'active' : 'pending',
+                'status' => 'active', 
             ]);
 
+            // Invoice langsung berstatus 'paid' (Lunas)
             $invoice = Invoice::create([
                 'user_id' => $userId,
                 'subscription_id' => $subscription->id,
                 'invoice_number' => $this->generateInvoiceNumber(),
                 'amount' => $plan->price,
-                'status' => $isFree ? 'paid' : 'pending',
-                'due_date' => now()->addDay()->toDateString(),
-                'paid_at' => $isFree ? now() : null,
-                'payment_method' => $isFree ? 'free-plan' : null,
+                'status' => 'paid', 
+                'due_date' => now()->toDateString(),
+                'paid_at' => now(),
+                'payment_method' => 'sandbox-instant',
             ]);
-
-            if ($isFree) {
-                Subscription::where('user_id', $userId)
-                    ->where('status', 'active')
-                    ->where('id', '!=', $subscription->id)
-                    ->update([
-                        'status' => 'cancelled',
-                        'end_date' => now()->toDateString(),
-                    ]);
-            }
 
             Log::create([
                 'user_id' => $userId,
-                'action' => 'CREATE_SUBSCRIPTION',
+                'action' => 'UPGRADE_SUBSCRIPTION',
                 'ip_address' => $request->ip(),
-                'details' => "Memilih paket {$plan->plan_name} dengan invoice {$invoice->invoice_number}.",
+                'details' => "Instant upgrade ke paket {$plan->plan_name} (Lunas otomatis).",
             ]);
 
             DB::commit();
-
-            if ($isFree) {
-                return redirect('/billing')
-                    ->with('success', "Paket {$plan->plan_name} berhasil diaktifkan.");
-            }
-
-            return redirect('/billing')
-                ->with('success', 'Invoice berhasil dibuat. Lakukan pembayaran simulasi.');
+            return redirect('/billing')->with('success', "Sukses! Paket {$plan->plan_name} Anda telah aktif.");
         } catch (\Throwable $e) {
             DB::rollBack();
-
-            return redirect()
-                ->back()
-                ->with('error', 'Gagal membuat subscription: ' . $e->getMessage());
-        }
-    }
-
-    public function pay(Request $request, Invoice $invoice)
-    {
-        if ($invoice->user_id !== Auth::id()) {
-            abort(403, 'Anda tidak punya akses ke invoice ini.');
-        }
-
-        if ($invoice->status === 'paid') {
-            return redirect()
-                ->back()
-                ->with('error', 'Invoice sudah dibayar.');
-        }
-
-        if ($invoice->status !== 'pending') {
-            return redirect()
-                ->back()
-                ->with('error', 'Invoice tidak dapat dibayar.');
-        }
-
-        DB::beginTransaction();
-
-        try {
-            $subscription = $invoice->subscription;
-
-            if (!$subscription) {
-                throw new \RuntimeException('Subscription invoice tidak ditemukan.');
-            }
-
-            Subscription::where('user_id', Auth::id())
-                ->where('status', 'active')
-                ->where('id', '!=', $subscription->id)
-                ->update([
-                    'status' => 'cancelled',
-                    'end_date' => now()->toDateString(),
-                ]);
-
-            $subscription->update([
-                'status' => 'active',
-                'start_date' => now()->toDateString(),
-                'end_date' => now()->addDays(30)->toDateString(),
-            ]);
-
-            $invoice->update([
-                'status' => 'paid',
-                'paid_at' => now(),
-                'payment_method' => 'simulated-payment',
-            ]);
-
-            Log::create([
-                'user_id' => Auth::id(),
-                'action' => 'PAY_INVOICE',
-                'ip_address' => $request->ip(),
-                'details' => "Membayar invoice {$invoice->invoice_number} secara simulasi.",
-            ]);
-
-            DB::commit();
-
-            return redirect('/billing')
-                ->with('success', 'Pembayaran berhasil. Paket baru sudah aktif.');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-
-            return redirect()
-                ->back()
-                ->with('error', 'Pembayaran gagal: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memproses upgrade: ' . $e->getMessage());
         }
     }
 
     public function cancel(Request $request, Subscription $subscription)
     {
         if ($subscription->user_id !== Auth::id()) {
-            abort(403, 'Anda tidak punya akses ke subscription ini.');
-        }
-
-        if (!in_array($subscription->status, ['active', 'pending'], true)) {
-            return redirect()
-                ->back()
-                ->with('error', 'Subscription sudah tidak aktif.');
+            abort(403);
         }
 
         DB::transaction(function () use ($subscription, $request) {
@@ -221,31 +173,30 @@ class BillingController extends Controller
                 'end_date' => now()->toDateString(),
             ]);
 
-            Invoice::where('subscription_id', $subscription->id)
-                ->where('status', 'pending')
-                ->update(['status' => 'cancelled']);
-
             Log::create([
                 'user_id' => Auth::id(),
                 'action' => 'CANCEL_SUBSCRIPTION',
                 'ip_address' => $request->ip(),
-                'details' => "Membatalkan subscription ID {$subscription->id}.",
+                'details' => "Membatalkan langganan paket ID {$subscription->id}.",
             ]);
         });
 
-        return redirect('/billing')
-            ->with('success', 'Subscription berhasil dibatalkan.');
+        return redirect('/billing')->with('success', 'Langganan berhasil dihentikan.');
     }
 
     private function generateInvoiceNumber(): string
     {
         do {
-            $number = 'INV-'
-                . now()->format('YmdHis')
-                . '-'
-                . strtoupper(Str::random(6));
+            $number = 'INV-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(6));
         } while (Invoice::where('invoice_number', $number)->exists());
-
         return $number;
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+        if ($bytes >= 1048576) return round($bytes / 1048576, 2) . ' MB';
+        if ($bytes >= 1024) return round($bytes / 1024, 2) . ' KB';
+        return $bytes . ' bytes';
     }
 }
