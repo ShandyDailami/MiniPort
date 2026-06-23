@@ -53,3 +53,7 @@ Route::post('/logout', [AuthController::class, 'logout']);
 
 Route::get('/register', [AuthController::class, 'registView'])->name('register');
 Route::post('/register', [AuthController::class, 'regist']);
+
+// Route::get('/billing', function () {
+//     return view('frontend.billing.index');
+// })->middleware('auth');

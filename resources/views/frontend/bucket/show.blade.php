@@ -42,78 +42,6 @@
                 <button @click="openShareModal = false" class="border-2 border-black bg-[#FF4545] p-1 text-white shadow-[1px_1px_black] hover:translate-y-0.5 transition-all">
                     <i data-lucide="x" class="h-4 w-4 stroke-[3]"></i>
                 </button>
-    @if (session('success'))
-        <div class="mb-6 border-4 border-black bg-green-400 p-4 font-black text-lg shadow-[4px_4px_black]">
-            ✅ {{ session('success') }}
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="mb-6 border-4 border-black bg-[#D72F19] text-white p-4 font-black text-lg shadow-[4px_4px_black]">
-            ⚠️ {{ session('error') }}
-        </div>
-    @endif
-
-    @if (session('share_url'))
-        <div class="mb-6 border-4 border-black bg-cyan-300 p-5 shadow-[4px_4px_black]">
-            <h3 class="font-black uppercase text-xl mb-3">🔗 Temporary Share Link</h3>
-
-            <p class="font-bold mb-2">
-                Object: <span class="font-mono">{{ session('share_key') }}</span>
-            </p>
-
-            <p class="font-bold mb-4">
-                Berlaku: {{ session('share_expires') }} menit
-            </p>
-
-            <input
-                type="text"
-                readonly
-                value="{{ session('share_url') }}"
-                onclick="this.select()"
-                class="w-full border-4 border-black bg-white px-4 py-3 font-mono text-sm shadow-[3px_3px_black]"
-            >
-
-            <p class="font-bold text-sm mt-3">
-                Klik input di atas lalu tekan CTRL + C untuk copy link.
-            </p>
-        </div>
-    @endif
-
-    <section class="border-4 border-black bg-[#F9C25B] p-8 shadow-[8px_8px_black] mb-8">
-        <h1 class="text-4xl font-black uppercase mb-4">🪣 {{ $bucket->bucket_name }}</h1>
-        <p class="font-bold text-xl">Region: {{ $bucket->region }}</p>
-        <p class="font-bold text-xl">Dibuat: {{ $bucket->created_at->format('d M Y, H:i') }}</p>
-    </section>
-
-    <section class="border-4 border-black bg-[#E9D5FF] p-8 shadow-[8px_8px_black] mb-8">
-        <h2 class="text-3xl font-black uppercase mb-6">⬆️ Upload File</h2>
-
-        <form action="/bucket/{{ $bucket->id }}/objects" method="POST" enctype="multipart/form-data" class="flex flex-col gap-6">
-            @csrf
-
-            <div>
-                <label for="object_file" class="block font-black uppercase text-xl mb-2">
-                    Pilih File
-                </label>
-
-                <input
-                    type="file"
-                    id="object_file"
-                    name="object_file"
-                    required
-                    class="w-full border-4 border-black bg-white px-4 py-4 font-bold shadow-[4px_4px_black]"
-                >
-
-                @error('object_file')
-                    <div class="mt-3 font-bold text-white bg-[#D72F19] border-2 border-black inline-block px-3 py-1 shadow-[2px_2px_black]">
-                        {{ $message }}
-                    </div>
-                @enderror
-
-                <p class="font-bold text-sm text-slate-700 mt-3">
-                    Maksimal file: {{ $maxUploadMb ?? 500 }} MB.
-                </p>
             </div>
 
             <p class="text-xs font-bold text-slate-800 mb-4 leading-relaxed">
@@ -226,14 +154,15 @@
             </div>
 
             {{-- TABEL BERKAS --}}
+           
             <div class="overflow-x-auto border-4 border-black shadow-[4px_4px_black]">
-                <table class="w-full text-left border-collapse font-bold">
+                <table class="w-full text-left border-collapse font-bold table-fixed md:table-auto">
                     <thead>
                         <tr class="bg-[#E2E8F0] border-b-4 border-black text-xs uppercase tracking-wider">
-                            <th class="p-4 border-r-4 border-black">Nama Berkas (Key)</th>
-                            <th class="p-4 border-r-4 border-black hidden sm:table-cell">Ukuran</th>
-                            <th class="p-4 border-r-4 border-black hidden md:table-cell">Terakhir Diubah</th>
-                            <th class="p-4 text-center">Aksi / Tindakan</th>
+                            <th class="p-4 border-r-4 border-black w-1/2 md:w-auto">Nama Berkas (Key)</th>
+                            <th class="p-4 border-r-4 border-black hidden sm:table-cell w-24">Ukuran</th>
+                            <th class="p-4 border-r-4 border-black hidden md:table-cell w-48">Terakhir Diubah</th>
+                            <th class="p-4 text-center w-40">Aksi / Tindakan</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y-4 divide-black text-xs">
@@ -242,28 +171,25 @@
                                 x-show="matchesSearch('{{ $obj['key'] }}')"
                                 class="hover:bg-[#FDFBF7] transition-colors"
                             >
-                                <!-- Nama File & Ikon Representatif -->
-                                <td class="p-4 border-r-4 border-black truncate max-w-[200px] sm:max-w-xs select-all text-black flex items-center gap-2">
-                                    <span class="p-1 border-2 border-black" style="background-color: #FECDD3">
-                                        <i :data-lucide="getFileIcon('{{ $obj['key'] }}')" class="h-4 w-4 text-black stroke-[2.5]"></i>
-                                    </span>
-                                    <span class="font-bold truncate" title="{{ $obj['key'] }}">{{ $obj['key'] }}</span>
+                                <td class="p-4 border-r-4 border-black truncate max-w-[200px] sm:max-w-xs select-all text-black">
+                                    <div class="flex items-center gap-2">
+                                        <span class="p-1 border-2 border-black shrink-0" style="background-color: #FECDD3">
+                                            <i :data-lucide="getFileIcon('{{ $obj['key'] }}')" class="h-4 w-4 text-black stroke-[2.5]"></i>
+                                        </span>
+                                        <span class="font-bold truncate" title="{{ $obj['key'] }}">{{ $obj['key'] }}</span>
+                                    </div>
                                 </td>
 
-                                <!-- Ukuran File -->
-                                <td class="p-4 border-r-4 border-black hidden sm:table-cell font-mono text-slate-700">
+                                <td class="p-4 border-r-4 border-black hidden sm:table-cell font-mono text-slate-700 whitespace-nowrap">
                                     {{ $obj['size_text'] ?? number_format($obj['size'] / 1024, 2) . ' KB' }}
                                 </td>
 
-                                <!-- Terakhir Diubah -->
-                                <td class="p-4 border-r-4 border-black hidden md:table-cell text-slate-500 font-semibold">
+                                <td class="p-4 border-r-4 border-black hidden md:table-cell text-slate-500 font-semibold whitespace-nowrap">
                                     {{ is_numeric($obj['last_modified']) ? date('d M Y, H:i', $obj['last_modified']) : $obj['last_modified'] }}
                                 </td>
 
-                                <!-- Tombol-Tombol Aksi -->
                                 <td class="p-3">
                                     <div class="flex items-center justify-center gap-2 flex-wrap">
-                                        <!-- Download Button -->
                                         <a 
                                             href="{{ url('/bucket/' . $bucket->id . '/objects/download') }}?key={{ urlencode($obj['key']) }}"
                                             class="border-2 border-black bg-[#34D399] p-1.5 shadow-[2px_2px_black] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_black] transition-all text-black"
@@ -272,7 +198,6 @@
                                             <i data-lucide="download" class="h-3.5 w-3.5 stroke-[2.5]"></i>
                                         </a>
 
-                                        <!-- Share Link Button -->
                                         <a 
                                             href="{{ url('/bucket/' . $bucket->id . '/objects/share') }}?key={{ urlencode($obj['key']) }}"
                                             class="border-2 border-black bg-[#FDE047] p-1.5 shadow-[2px_2px_black] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_black] transition-all text-black"
@@ -281,7 +206,6 @@
                                             <i data-lucide="share-2" class="h-3.5 w-3.5 stroke-[2.5]"></i>
                                         </a>
 
-                                        <!-- Delete Button with Alpine.js Retro Alert -->
                                         <div x-data="{ openDeleteConfirm: false }">
                                             <button 
                                                 @click="openDeleteConfirm = true" 
@@ -292,7 +216,6 @@
                                                 <i data-lucide="trash-2" class="h-3.5 w-3.5 stroke-[2.5]"></i>
                                             </button>
 
-                                            <!-- Delete Warning retro modal -->
                                             <div x-show="openDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" style="display: none;">
                                                 <div class="w-full max-w-sm border-4 border-black bg-[#FF4545] text-white p-6 shadow-[8px_8px_black] rounded-none">
                                                     <h3 class="text-sm uppercase font-black tracking-wider border-b-2 border-black pb-2 mb-3">⚠️ Hapus Berkas dari S3?</h3>
