@@ -53,36 +53,10 @@
                 </p>
             </div>
 
-<<<<<<< HEAD
             <div class="border-4 border-black bg-[#FDE047] px-4 py-2 font-black shadow-[4px_4px_black] w-fit select-none">
                 {{ round($usagePercentage ?? 0, 2) }}% FULL
             </div>
         </div>
-=======
-        {{-- SIDEBAR NAVIGASI --}}
-        <aside class="w-full md:w-64 h-full flex-none border-r-4 border-black bg-white p-6 shadow-[4px_0px_0px_0px_rgba(0,0,0,1)] relative z-10 overflow-y-auto">
-            <h2 class="mb-6 text-xl font-black uppercase text-slate-900 tracking-widest border-b-4 border-black pb-2">Navigasi</h2>
-            <nav class="flex flex-col gap-4">
-                {{-- Menu Aktif: Kuning Terang (Yellow 400) --}}
-                <a href="/" class="border-4 border-black bg-[#FDE047] px-4 py-3 font-black uppercase shadow-[4px_4px_black] flex items-center justify-between hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] transition-all">
-                    <span>Overview</span>
-                    <span class="text-xl leading-none">></span>
-                </a>
-                <a href="/buckets" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
-                    Buckets
-                </a>
-                <a href="/credentials" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
-                    API Keys
-                </a>
-                <a href="/billing" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
-                    Billing
-                </a>
-                <a href="#" class="border-4 border-transparent px-4 py-3 font-bold uppercase text-slate-600 hover:text-black hover:border-black hover:shadow-[4px_4px_black] hover:bg-slate-50 transition-all">
-                    Settings
-                </a>
-            </nav>
-        </aside>
->>>>>>> 831419a3e8d78f62ad59c30c48981e320487cfa0
 
         <!-- PROGRESS BAR ARCADE SCREEN -->
         <div class="relative h-16 w-full border-4 border-black bg-black rounded-none flex items-center shadow-[inset_0px_4px_0px_rgba(0,0,0,0.3)] select-none">

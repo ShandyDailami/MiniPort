@@ -35,11 +35,33 @@ class BillingController extends Controller
             ->take(10)
             ->get();
 
-        return view('frontend.billing.index', compact(
-            'plans',
-            'activeSubscription',
-            'invoices'
-        ));
+        /*
+        sementara hardcode dulu sampai BucketObject selesai
+        */
+
+        $usedStorageMb = 0;
+
+        $storageLimitMb =
+            $activeSubscription?->plan?->storage_limit_mb
+            ?? 10;
+
+        $usagePercentage =
+            min(
+                100,
+                ($usedStorageMb / max(1, $storageLimitMb)) * 100
+            );
+
+        return view(
+            'frontend.billing.index',
+            compact(
+                'plans',
+                'activeSubscription',
+                'invoices',
+                'usedStorageMb',
+                'storageLimitMb',
+                'usagePercentage'
+            )
+        );
     }
 
     public function subscribe(Request $request, Plan $plan)

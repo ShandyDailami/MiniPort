@@ -61,78 +61,181 @@
             <form action="{{ url('/register') }}" method="POST" class="space-y-5 m-0">
                 @csrf
 
-                <!-- Input Nama Lengkap -->
+                {{-- Nama --}}
                 <div>
-                    <label for="name" class="block text-xs font-black uppercase tracking-wider text-black mb-1.5">Nama Lengkap:</label>
+                    <label for="name"
+                        class="block text-xs font-black uppercase tracking-wider text-black mb-1.5">
+                        Nama Lengkap:
+                    </label>
+
                     <div class="relative">
-                        <input 
-                            type="text" 
-                            name="name" 
-                            id="name" 
+                        <input
+                            type="text"
+                            name="name"
+                            id="name"
                             value="{{ old('name') }}"
-                            required 
+                            required
                             placeholder="Contoh: John Doe"
-                            class="w-full border-4 border-black p-3 pl-11 font-bold text-sm text-black focus:outline-none focus:ring-0 focus:bg-[#FDFBF7] shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] transition-all rounded-none placeholder-slate-400"
-                        >
+                            class="w-full border-4 border-black p-3 pl-11 font-bold text-sm text-black
+                                focus:outline-none focus:ring-0 focus:bg-[#FDFBF7]
+                                shadow-[4px_4px_black] rounded-none placeholder-slate-400">
+
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                            <i data-lucide="user" class="h-4 w-4 text-black stroke-[2.5]"></i>
+                            <i data-lucide="user" class="h-4 w-4 stroke-[2.5]"></i>
                         </div>
                     </div>
+
+                    @error('name')
+                        <p class="mt-2 text-xs font-bold text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
                 </div>
 
-                <!-- Input Email -->
+
+                {{-- Email --}}
                 <div>
-                    <label for="email" class="block text-xs font-black uppercase tracking-wider text-black mb-1.5">Alamat Email:</label>
+                    <label for="email"
+                        class="block text-xs font-black uppercase tracking-wider text-black mb-1.5">
+                        Alamat Email:
+                    </label>
+
                     <div class="relative">
-                        <input 
-                            type="email" 
-                            name="email" 
-                            id="email" 
+                        <input
+                            type="email"
+                            name="email"
+                            id="email"
                             value="{{ old('email') }}"
-                            required 
+                            required
                             placeholder="nama@domain.com"
-                            class="w-full border-4 border-black p-3 pl-11 font-bold text-sm text-black focus:outline-none focus:ring-0 focus:bg-[#FDFBF7] shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] transition-all rounded-none placeholder-slate-400"
-                        >
+                            class="w-full border-4 border-black p-3 pl-11 font-bold text-sm text-black
+                                focus:outline-none focus:ring-0 focus:bg-[#FDFBF7]
+                                shadow-[4px_4px_black] rounded-none placeholder-slate-400">
+
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                            <i data-lucide="mail" class="h-4 w-4 text-black stroke-[2.5]"></i>
+                            <i data-lucide="mail" class="h-4 w-4 stroke-[2.5]"></i>
                         </div>
                     </div>
+
+                    @error('email')
+                        <p class="mt-2 text-xs font-bold text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
                 </div>
 
-                <!-- Input Password -->
-                <div>
-                    <label for="password" class="block text-xs font-black uppercase tracking-wider text-black mb-1.5">Kata Sandi:</label>
-                    <div class="relative" x-data="{ show: false }">
-                        <input 
-                            :type="show ? 'text' : 'password'" 
-                            name="password" 
-                            id="password" 
-                            required 
+
+                {{-- Password --}}
+                <div x-data="{ showPassword:false }">
+
+                    <label for="password"
+                        class="block text-xs font-black uppercase tracking-wider text-black mb-1.5">
+                        Kata Sandi:
+                    </label>
+
+                    <div class="relative">
+
+                        <input
+                            :type="showPassword ? 'text' : 'password'"
+                            name="password"
+                            id="password"
+                            required
                             placeholder="Minimal 8 karakter"
-                            class="w-full border-4 border-black p-3 pl-11 pr-10 font-bold text-sm text-black focus:outline-none focus:ring-0 focus:bg-[#FDFBF7] shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] transition-all rounded-none placeholder-slate-400"
-                        >
+                            class="w-full border-4 border-black p-3 pl-11 pr-10 font-bold text-sm text-black
+                                focus:outline-none focus:ring-0 focus:bg-[#FDFBF7]
+                                shadow-[4px_4px_black] rounded-none placeholder-slate-400">
+
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                            <i data-lucide="lock" class="h-4 w-4 text-black stroke-[2.5]"></i>
+                            <i data-lucide="lock" class="h-4 w-4 stroke-[2.5]"></i>
                         </div>
-                        <button 
-                            type="button" 
-                            @click="show = !show" 
-                            class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-black transition-colors"
-                        >
-                            <i :data-lucide="show ? 'eye-off' : 'eye'" class="h-4 w-4 stroke-[2.5]"></i>
+
+                        <button
+                            type="button"
+                            @click="showPassword=!showPassword"
+                            class="absolute inset-y-0 right-0 flex items-center pr-3">
+
+                            <i
+                                :data-lucide="showPassword ? 'eye-off' : 'eye'"
+                                class="h-4 w-4 stroke-[2.5]">
+                            </i>
+
                         </button>
+
                     </div>
+
+                    @error('password')
+                        <p class="mt-2 text-xs font-bold text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
+
                 </div>
 
-                <!-- Tombol Submit -->
+
+                {{-- Konfirmasi Password --}}
+                <div x-data="{ showConfirm:false }">
+
+                    <label for="password_confirmation"
+                        class="block text-xs font-black uppercase tracking-wider text-black mb-1.5">
+                        Konfirmasi Kata Sandi:
+                    </label>
+
+                    <div class="relative">
+
+                        <input
+                            :type="showConfirm ? 'text' : 'password'"
+                            name="password_confirmation"
+                            id="password_confirmation"
+                            required
+                            placeholder="Ulangi kata sandi"
+                            class="w-full border-4 border-black p-3 pl-11 pr-10 font-bold text-sm text-black
+                                focus:outline-none focus:ring-0 focus:bg-[#FDFBF7]
+                                shadow-[4px_4px_black] rounded-none placeholder-slate-400">
+
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                            <i data-lucide="lock" class="h-4 w-4 stroke-[2.5]"></i>
+                        </div>
+
+                        <button
+                            type="button"
+                            @click="showConfirm=!showConfirm"
+                            class="absolute inset-y-0 right-0 flex items-center pr-3">
+
+                            <i
+                                :data-lucide="showConfirm ? 'eye-off' : 'eye'"
+                                class="h-4 w-4 stroke-[2.5]">
+                            </i>
+
+                        </button>
+
+                    </div>
+
+                    @error('password_confirmation')
+                        <p class="mt-2 text-xs font-bold text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
+
+                </div>
+
+
+                {{-- Tombol Register --}}
                 <div class="pt-2">
-                    <button 
-                        type="submit" 
-                        class="w-full border-4 border-black bg-[#34D399] text-black px-6 py-3.5 font-black uppercase text-sm text-center shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all cursor-pointer"
-                    >
-                        Buat Akun Sekarang ->
+                    <button
+                        type="submit"
+                        class="w-full border-4 border-black bg-[#34D399] text-black
+                            px-6 py-3.5 font-black uppercase text-sm
+                            shadow-[4px_4px_black]
+                            hover:translate-x-[2px]
+                            hover:translate-y-[2px]
+                            hover:shadow-[2px_2px_black]
+                            transition-all">
+
+                        Buat Akun Sekarang →
+
                     </button>
                 </div>
+
             </form>
 
             {{-- MENU LOGIN LINK --}}

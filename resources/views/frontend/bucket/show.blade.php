@@ -31,7 +31,6 @@
         </a>
     </div>
 
-<<<<<<< HEAD
     {{-- 2. MODAL PRESIGNED SHARE URL (RETRO ONE-TIME POP-UP) --}}
     @if(session('share_url'))
     <div x-data="{ openShareModal: true }" x-show="openShareModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -43,7 +42,6 @@
                 <button @click="openShareModal = false" class="border-2 border-black bg-[#FF4545] p-1 text-white shadow-[1px_1px_black] hover:translate-y-0.5 transition-all">
                     <i data-lucide="x" class="h-4 w-4 stroke-[3]"></i>
                 </button>
-=======
     @if (session('success'))
         <div class="mb-6 border-4 border-black bg-green-400 p-4 font-black text-lg shadow-[4px_4px_black]">
             ✅ {{ session('success') }}
@@ -116,7 +114,6 @@
                 <p class="font-bold text-sm text-slate-700 mt-3">
                     Maksimal file: {{ $maxUploadMb ?? 500 }} MB.
                 </p>
->>>>>>> 831419a3e8d78f62ad59c30c48981e320487cfa0
             </div>
 
             <p class="text-xs font-bold text-slate-800 mb-4 leading-relaxed">
