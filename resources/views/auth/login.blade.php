@@ -22,7 +22,7 @@
         }
     </style>
 </head>
-<body class="h-full overflow-hidden bg-[#FDFBF7] text-black">
+<body class="h-full overflow-hidden bg-[#FDFBF7] text-black" x-data="{ activeTab: 'email' }">
 
     {{-- WRAPPER UTAMA SPLIT PANEL --}}
     <div class="h-full w-full flex flex-col md:flex-row">
@@ -64,10 +64,30 @@
                 </div>
 
                 <h1 class="text-4xl font-black uppercase tracking-tight text-black mb-2">Log in to Account</h1>
-                <p class="text-slate-800 font-bold text-xs mb-8">Senang melihat Anda kembali! Silakan masuk ke akun konsol sandbox Anda.</p>
+                <p class="text-slate-800 font-bold text-xs mb-6">Senang melihat Anda kembali! Silakan pilih metode autentikasi Anda.</p>
 
-                {{-- FORM LOGIN --}}
-                <form action="{{ url('/login') }}" method="POST" class="space-y-6 m-0">
+                {{-- SWITCHER TAB NEOBRUTALIST (Alpine.js) --}}
+                <div class="grid grid-cols-2 gap-3 mb-6 border-4 border-black bg-black p-1.5 shadow-[4px_4px_black]">
+                    <button 
+                        type="button"
+                        @click="activeTab = 'email'" 
+                        :class="activeTab === 'email' ? 'bg-[#FDE047] text-black shadow-[2px_2px_0px_black]' : 'bg-zinc-800 text-slate-400 hover:text-white'"
+                        class="py-2.5 text-xs font-black uppercase tracking-wider transition-all select-none border-2 border-transparent focus:outline-none"
+                    >
+                        📧 Email & Pass
+                    </button>
+                    <button 
+                        type="button"
+                        @click="activeTab = 'apikey'" 
+                        :class="activeTab === 'apikey' ? 'bg-[#FDE047] text-black shadow-[2px_2px_0px_black]' : 'bg-zinc-800 text-slate-400 hover:text-white'"
+                        class="py-2.5 text-xs font-black uppercase tracking-wider transition-all select-none border-2 border-transparent focus:outline-none"
+                    >
+                        🔑 S3 API Key
+                    </button>
+                </div>
+
+                {{-- OPSI 1: FORM LOGIN TRADISIONAL (EMAIL & PASSWORD) --}}
+                <form x-show="activeTab === 'email'" action="{{ url('/login') }}" method="POST" class="space-y-6 m-0">
                     @csrf
 
                     <!-- Input Email -->
@@ -80,8 +100,8 @@
                                 name="email"
                                 placeholder="Masukkan email Anda"
                                 value="{{ old('email') }}"
-                                required
-                                class="w-full border-4 border-black bg-white p-4 pl-12 font-bold text-sm shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] focus:outline-none transition-all rounded-none placeholder-slate-400 @error('email') border-red-500 shadow-red-500 @enderror"
+                                :required="activeTab === 'email'"
+                                class="w-full border-4 border-black bg-white p-4 pl-12 font-bold text-sm shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] focus:outline-none transition-all rounded-none placeholder-slate-400 @error('email') border-red-500 @enderror"
                             >
                             <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                                 <i data-lucide="mail" class="h-5 w-5 text-black stroke-[2.5]"></i>
@@ -98,8 +118,8 @@
                                 id="password"
                                 name="password"
                                 placeholder="Masukkan kata sandi"
-                                required
-                                class="w-full border-4 border-black bg-white p-4 pl-12 pr-12 font-bold text-sm shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] focus:outline-none transition-all rounded-none placeholder-slate-400 @error('password') border-red-500 shadow-red-500 @enderror"
+                                :required="activeTab === 'email'"
+                                class="w-full border-4 border-black bg-white p-4 pl-12 pr-12 font-bold text-sm shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] focus:outline-none transition-all rounded-none placeholder-slate-400 @error('password') border-red-500 @enderror"
                             >
                             <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                                 <i data-lucide="lock" class="h-5 w-5 text-black stroke-[2.5]"></i>
@@ -114,13 +134,72 @@
                         </div>
                     </div>
 
-                    <!-- Tombol Submit -->
+                    <!-- Tombol Submit Email -->
                     <div class="pt-2">
                         <button 
                             type="submit" 
                             class="w-full border-4 border-black bg-[#D72F19] text-white p-4 font-black uppercase tracking-wider text-sm shadow-[4px_4px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_black] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all cursor-pointer text-center"
                         >
-                            Masuk->
+                            Masuk Konsol ->
+                        </button>
+                    </div>
+                </form>
+
+                {{-- OPSI 2: FORM LOGIN VIA S3 API KEY --}}
+                <form x-show="activeTab === 'apikey'" action="{{ url('/login') }}" method="POST" class="space-y-6 m-0" style="display: none;">
+                    @csrf
+
+                    <!-- Input Access Key ID -->
+                    <div class="space-y-1.5">
+                        <label for="access_key" class="block text-xs font-black uppercase tracking-wider text-black">Access Key ID</label>
+                        <div class="relative">
+                            <input
+                                type="text"
+                                id="access_key"
+                                name="access_key"
+                                placeholder="Masukkan Access Key ID"
+                                value="{{ old('access_key') }}"
+                                :required="activeTab === 'apikey'"
+                                class="w-full border-4 border-black bg-white p-4 pl-12 font-mono font-bold text-xs shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] focus:outline-none transition-all rounded-none placeholder-slate-400"
+                            >
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                                <i data-lucide="key-round" class="h-5 w-5 text-black stroke-[2.5]"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Secret Access Key -->
+                    <div class="space-y-1.5" x-data="{ show: false }">
+                        <label for="secret_key" class="block text-xs font-black uppercase tracking-wider text-black">Secret Access Key</label>
+                        <div class="relative">
+                            <input
+                                :type="show ? 'text' : 'password'"
+                                id="secret_key"
+                                name="secret_key"
+                                placeholder="Masukkan Secret Access Key"
+                                :required="activeTab === 'apikey'"
+                                class="w-full border-4 border-black bg-white p-4 pl-12 pr-12 font-mono font-bold text-xs shadow-[4px_4px_black] focus:shadow-[2px_2px_black] focus:translate-x-[2px] focus:translate-y-[2px] focus:outline-none transition-all rounded-none placeholder-slate-400"
+                            >
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                                <i data-lucide="shield-check" class="h-5 w-5 text-black stroke-[2.5]"></i>
+                            </div>
+                            <button 
+                                type="button" 
+                                @click="show = !show" 
+                                class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500 hover:text-black transition-colors"
+                            >
+                                <i :data-lucide="show ? 'eye-off' : 'eye'" class="h-4 w-4 stroke-[2.5]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Submit API Key -->
+                    <div class="pt-2">
+                        <button 
+                            type="submit" 
+                            class="w-full border-4 border-black bg-black text-white p-4 font-black uppercase tracking-wider text-sm shadow-[4px_4px_#34D399] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_#34D399] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all cursor-pointer text-center"
+                        >
+                            Otorisasi Kredensial ->
                         </button>
                     </div>
                 </form>
